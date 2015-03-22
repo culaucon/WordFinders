@@ -1,6 +1,6 @@
 var fs = require("fs");
 
-exports.generatePuzzle = function() {
+module.exports.generatePuzzle = function() {
 	const NUM_WORDS = 15;
 	const N = 12;
 	const SIZE = 480;
