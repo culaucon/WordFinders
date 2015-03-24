@@ -1,9 +1,12 @@
 var express = require("express");
+var path = require("path");
 var bodyParser = require("body-parser");
 var mysql = require("mysql");
 var expressSession = require("express-session");
+var flash = require("connect-flash");
 var passport = require("passport");
 var puzzle = require("./puzzle/puzzle");
+var port = 3000;
 
 var app = express();
 
@@ -23,6 +26,9 @@ connection.connect(function(err) {
 	console.log("Connected to MySQL");
 });
 
+// Flash setup
+app.use(flash());
+
 // Passport setup
 app.use(expressSession({secret: "secret session"}));
 app.use(passport.initialize());
@@ -30,15 +36,53 @@ app.use(passport.session());
 require("./passport/passport")(passport, connection);
 
 // Express setup
-app.use(express.static(__dirname + "/views"));
+app.use(express.static(path.join(__dirname, "views")));
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+  extended: true
+})); 
+app.set("view engine", "ejs");
 
+// Routes setup
 app.get("/", function(req, res) {
-	res.sendfile(__dirname + "/views/index.html");
+	var username;
+	if (req.user) {
+		username = req.user.username;
+	}
+	res.render("index.ejs", {user: username});
 });
 
+app.get("/login", function(req, res) {
+	res.render("login.ejs", {message: req.flash("loginMessage")});
+});
+
+app.post("/login", passport.authenticate("local-login", {
+		successRedirect: "/",
+		failureRedirect: "/login",
+		failureFlash: true
+	}), function(req, res) {
+		if (req.body.remember) {
+			req.session.cookie.maxAge = 1000 * 60 * 3;
+		} else {
+			req.session.cookie.expires = false;
+		}
+		res.redirect("/");
+	}
+);
+
+app.get("/signup", function(req, res) {
+	res.render("signup.ejs", {message: req.flash("signupMessage")});
+});
+
+app.post("/signup", passport.authenticate("local-signup", {
+		successRedirect: "/",
+		failureRedirect: "/signup",
+		failureFlash: true
+	})
+);
+
 app.get("/solo", function(req, res) {
-	res.sendfile(__dirname + "/views/solo.html");
+	res.render("solo.ejs");
 });
 
 app.post("/gen-puzzle", function(req, res) {
@@ -46,4 +90,7 @@ app.post("/gen-puzzle", function(req, res) {
 	res.send(new_puzzle);
 });
 
-app.listen(3000);
+
+app.listen(port);
+
+console.log("Listening to port " + port);

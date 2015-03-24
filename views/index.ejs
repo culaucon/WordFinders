@@ -1,3 +1,5 @@
+<!-- views/index.ejs -->
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,7 +11,13 @@
 
 <body>
 
-Yo dawg! Welcome to Word Finders!
+<% if (user) { %>
+	Yo <%= user %>!
+<% } else {%>
+	Yo dawg!
+<% } %>
+
+Welcome to Word Finders!
 
 Please sign in to play. (TO-DO)
 
