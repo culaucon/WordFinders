@@ -19,12 +19,15 @@ query('SELECT NOW()', function(err, rows, result) {
 
 // Flash setup
 app.use(flash());
+console.log("finished flash");
 
 // Passport setup
-app.use(expressSession({secret: "secret session"}));
+//app.use(expressSession({secret: "secret session"}));
 app.use(passport.initialize());
 app.use(passport.session());
+console.log("initializing passport");
 require("./passport/passport")(passport, query);
+console.log("finished passport");
 
 // Express setup
 app.use(express.static(path.join(__dirname, "views")));
@@ -33,6 +36,7 @@ app.use(bodyParser.urlencoded({
   extended: true
 })); 
 app.set("view engine", "ejs");
+console.log("finished ejs");
 
 // Routes setup
 app.get("/", function(req, res) {
