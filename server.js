@@ -1,20 +1,43 @@
 var express = require("express");
-/*var path = require("path");
+var path = require("path");
 var bodyParser = require("body-parser");
-var query = require("pg-query");
+var mysql = require("mysql");
 var expressSession = require("express-session");
 var flash = require("connect-flash");
 var passport = require("passport");
-var puzzle = require("./puzzle/puzzle");*/
+var puzzle = require("./puzzle/puzzle");
 var port = 3000;
 
 var app = express();
-/*
+
+<<<<<<< HEAD
+<<<<<<< HEAD
 // PostgreSQL setup
 //query.connectionParameters = "postgres://cp3101b:cp3101b@localhost/wordfinders";
 query.connectionParameters = "postgres://yppresjlwkjekb:eUB0b8AojEclhj_Vhdh892zUa5@ec2-23-21-73-32.compute-1.amazonaws.com:5432/d5pertm7jkbfco";
 query('SELECT NOW()', function(err, rows, result) {
 	console.log(rows);
+=======
+=======
+>>>>>>> parent of 6c3cbcc... change from mysql to postgresql
+// MySQL setup
+var connection = mysql.createConnection({
+	host: "localhost",
+	user: "cp3101b",
+	password: "cp3101b",
+	database: "wordfinders"
+});
+
+connection.connect(function(err) {
+	if (err) {
+		console.log("Error connecting with MySQL: " + err.stack);
+		return;
+	}
+	console.log("Connected to MySQL");
+<<<<<<< HEAD
+>>>>>>> parent of 4148f28... change from mysql to postgresql
+=======
+>>>>>>> parent of 6c3cbcc... change from mysql to postgresql
 });
 
 // Flash setup
@@ -24,7 +47,7 @@ app.use(flash());
 app.use(expressSession({secret: "secret session"}));
 app.use(passport.initialize());
 app.use(passport.session());
-require("./passport/passport")(passport, query);
+require("./passport/passport")(passport, connection);
 
 // Express setup
 app.use(express.static(path.join(__dirname, "views")));
@@ -80,7 +103,7 @@ app.post("/gen-puzzle", function(req, res) {
 	var new_puzzle = puzzle.generatePuzzle();
 	res.send(new_puzzle);
 });
-*/
+
 app.get("/", function(req, res) {
 	res.render("solo.ejs");
 });
