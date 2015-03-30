@@ -78,7 +78,10 @@ app.post("/gen-puzzle", function(req, res) {
 	res.send(new_puzzle);
 });
 
+if (process.env.PORT) {
+	PORT = process.env.PORT;
+}
 
-app.listen(process.env.PORT || PORT);
+app.listen(PORT);
 
-console.log("Listening to port " + port);
+console.log("Listening to port " + PORT);
