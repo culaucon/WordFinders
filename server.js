@@ -12,7 +12,10 @@ var app = express();
 
 // PostgreSQL setup
 //query.connectionParameters = "postgres://cp3101b:cp3101b@localhost/wordfinders";
-query.connectionParameters = "postgres://postgres:postgres@localhost/wordfinders";
+query.connectionParameters = process.env.DATABASE_URL;
+query('SELECT NOW()', function(err, rows, result) {
+	console.log(rows);
+});
 
 // Flash setup
 app.use(flash());
