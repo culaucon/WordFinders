@@ -1,7 +1,7 @@
 var express = require("express");
 var path = require("path");
 var bodyParser = require("body-parser");
-var mysql = require("mysql");
+var query = require("pg-query");
 var expressSession = require("express-session");
 var flash = require("connect-flash");
 var passport = require("passport");
@@ -10,21 +10,9 @@ var port = 3000;
 
 var app = express();
 
-// MySQL setup
-var connection = mysql.createConnection({
-	host: "localhost",
-	user: "cp3101b",
-	password: "cp3101b",
-	database: "wordfinders"
-});
-
-connection.connect(function(err) {
-	if (err) {
-		console.log("Error connecting with MySQL: " + err.stack);
-		return;
-	}
-	console.log("Connected to MySQL");
-});
+// PostgreSQL setup
+//query.connectionParameters = "postgres://cp3101b:cp3101b@localhost/wordfinders";
+query.connectionParameters = "postgres://postgres:postgres@localhost/wordfinders";
 
 // Flash setup
 app.use(flash());
@@ -33,7 +21,7 @@ app.use(flash());
 app.use(expressSession({secret: "secret session"}));
 app.use(passport.initialize());
 app.use(passport.session());
-require("./passport/passport")(passport, connection);
+require("./passport/passport")(passport, query);
 
 // Express setup
 app.use(express.static(path.join(__dirname, "views")));
