@@ -1,18 +1,21 @@
 var express = require("express");
-var path = require("path");
+/*var path = require("path");
 var bodyParser = require("body-parser");
 var query = require("pg-query");
 var expressSession = require("express-session");
 var flash = require("connect-flash");
 var passport = require("passport");
-var puzzle = require("./puzzle/puzzle");
+var puzzle = require("./puzzle/puzzle");*/
 var port = 3000;
 
 var app = express();
-
+/*
 // PostgreSQL setup
 //query.connectionParameters = "postgres://cp3101b:cp3101b@localhost/wordfinders";
-query.connectionParameters = "postgres://postgres:postgres@localhost/wordfinders";
+query.connectionParameters = "postgres://yppresjlwkjekb:eUB0b8AojEclhj_Vhdh892zUa5@ec2-23-21-73-32.compute-1.amazonaws.com:5432/d5pertm7jkbfco";
+query('SELECT NOW()', function(err, rows, result) {
+	console.log(rows);
+});
 
 // Flash setup
 app.use(flash());
@@ -77,8 +80,12 @@ app.post("/gen-puzzle", function(req, res) {
 	var new_puzzle = puzzle.generatePuzzle();
 	res.send(new_puzzle);
 });
-
+*/
+app.get("/", function(req, res) {
+	res.render("solo.ejs");
+});
 
 app.listen(port);
 
 console.log("Listening to port " + port);
+
