@@ -18,7 +18,7 @@ query.connectionParameters = process.env.DATABASE_URL;
 app.use(flash());
 
 // Passport setup
-//app.use(expressSession({secret: "secret session"}));
+app.use(expressSession({secret: "secret session"}));
 app.use(passport.initialize());
 app.use(passport.session());
 require("./passport/passport")(passport, query);
