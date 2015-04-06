@@ -9,6 +9,7 @@ module.exports.generatePuzzle = function() {
 	const dy = [-1, 0, 1, 1, 1, 0, -1, -1];
 
 	var puzzle;
+	var list;
 	
 	function generate(words) {
 		puzzle = new Array(N);
@@ -21,11 +22,18 @@ module.exports.generatePuzzle = function() {
 	
 		var n = words.length;
 		var chosen = new Array(n);
+		list = new Array();
 	
 		for (var cnt = 0; cnt < NUM_WORDS; cnt++) {
 			while (true) {
 				var k = parseInt(Math.random() * n);
 				if (words[k].length < 3 || words[k].length > N || chosen[k]) continue;
+				var ok = true;
+				for (var i = 0; i < cnt; i++) {
+					if (list[i].indexOf(words[k]) != -1 || words[k].indexOf(list[i]) != -1) ok = false;
+				}
+				if (!ok) continue;
+				
 				var pos = [];
 				for (var i = 0; i < N; i++)
 					for (var j = 0 ; j < N; j++)
@@ -42,6 +50,7 @@ module.exports.generatePuzzle = function() {
 							}
 						}
 				if (pos.length == 0) continue;
+				list.push(words[k].toUpperCase());
 				var id = parseInt(Math.random() * pos.length);
 				var x = parseInt(pos[id] / 8 / N), y = parseInt((pos[id] / 8)) % N, dir = pos[id] % 8;
 				for (var cur = 0; cur < words[k].length; cur++, x += dx[dir], y += dy[dir]) {
@@ -50,7 +59,6 @@ module.exports.generatePuzzle = function() {
 				break;
 			}
 		}
-	
 		for (var i = 0; i < 12; i++)
 			for (var j = 0; j < 12; j++)
 				if (puzzle[i][j] === ' ') {
@@ -63,5 +71,13 @@ module.exports.generatePuzzle = function() {
 
 	generate(fs.readFileSync(FILE_PATH, "utf8").split("\n"));
 	
-	return puzzle;
+	var data = {
+		grid: puzzle,
+		words: list.sort()
+	}
+	return data;
+}
+
+module.exports.checkSolution = function(username, solution) {
+
 }
