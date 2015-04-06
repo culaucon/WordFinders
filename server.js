@@ -11,8 +11,8 @@ var PORT = 3000;
 var app = express();
 
 // PostgreSQL setup
-//query.connectionParameters = "postgres://cp3101b:cp3101b@localhost/wordfinders";
-query.connectionParameters = process.env.DATABASE_URL;
+query.connectionParameters = "postgres://cp3101b:cp3101b@localhost/wordfinders";
+//query.connectionParameters = process.env.DATABASE_URL;
 
 // Flash setup
 app.use(flash());
@@ -24,11 +24,11 @@ app.use(passport.session());
 require("./passport/passport")(passport, query);
 
 // Express setup
-app.use(express.static(path.join(__dirname, "views")));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
   extended: true
 })); 
+app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "ejs");
 
 // Routes setup
@@ -74,8 +74,7 @@ app.get("/solo", function(req, res) {
 });
 
 app.post("/gen-puzzle", function(req, res) {
-	var new_puzzle = puzzle.generatePuzzle();
-	res.send(new_puzzle);
+	res.send(puzzle.generatePuzzle());
 });
 
 if (process.env.PORT) {
