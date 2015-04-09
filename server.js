@@ -1,6 +1,7 @@
 var express = require("express");
 var path = require("path");
 var bodyParser = require("body-parser");
+var cookieParser = require("cookie-parser");
 var query = require("pg-query");
 var expressSession = require("express-session");
 var flash = require("connect-flash");
@@ -14,9 +15,6 @@ var app = express();
 query.connectionParameters = "postgres://cp3101b:cp3101b@localhost/wordfinders";
 //query.connectionParameters = process.env.DATABASE_URL;
 
-// Flash setup
-app.use(flash());
-
 // Passport setup
 app.use(expressSession({secret: "secret session"}));
 app.use(passport.initialize());
@@ -26,33 +24,39 @@ require("./passport/passport")(passport, query);
 // Express setup
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
-  extended: true
-})); 
+	extended: true
+}));
+app.use(cookieParser());
+app.use(flash());
 app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "ejs");
 
+// Dynamic helpers
+require("express-dynamic-helpers-patch")(app);
+app.dynamicHelpers({
+	user: function(req, res) {
+		return req.user;
+	}
+});
+
 // Routes setup
 app.get("/", function(req, res) {
-	var username;
-	if (req.user) {
-		username = req.user.username;
-	}
-	res.render("index.ejs", {user: username});
+	res.render("index.ejs");
 });
 
 app.get("/login", function(req, res) {
-	res.render("login.ejs", {message: req.flash("loginMessage")});
+	if (req.user) res.redirect("/");
+	res.render("login.ejs", {message: req.flash("loginMessage"), login: true});
 });
 
 app.post("/login", passport.authenticate("local-login", {
-		successRedirect: "/",
 		failureRedirect: "/login",
 		failureFlash: true
 	}), function(req, res) {
 		if (req.body.remember) {
-			req.session.cookie.maxAge = 1000 * 60 * 3;
+			req.cookies.maxAge = 1000 * 60 * 3;
 		} else {
-			req.session.cookie.expires = false;
+			req.cookies.expires = false;
 		}
 		res.redirect("/");
 	}
@@ -69,8 +73,13 @@ app.post("/signup", passport.authenticate("local-signup", {
 	})
 );
 
+app.get("/logout", function(req, res) {
+	req.logout();
+	res.redirect("/");
+})
+
 app.get("/practice", function(req, res) {
-	res.render("practice.ejs");
+	res.render("practice.ejs", {page: "practice"});
 });
 
 app.post("/gen-puzzle", function(req, res) {

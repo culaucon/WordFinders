@@ -4,27 +4,43 @@
 <html lang="en">
 
 <head>
-	<meta charset="utf-8">
-	<title>Word Finders</title>
-	<script src="javascripts/jquery-2.1.3.min.js"></script>
+	<% include partials/header %>
 </head>
 
 <body>
 
-<% if (user) { %>
-	Yo <%= user %>!
-<% } else {%>
-	Yo dawg!
+<% include partials/navbar %>
+
+<% if (!user) { %>
+<div class="container">
+
+	<div class="col-sm-6 col-sm-offset-3">
+		<h1>Sign Up</h1>
+		<br/>
+
+		<form action="/signup" method="post">
+			<div class="form-group">
+				<label>Username</label>
+				<input type="text" class="form-control" name="username">
+			</div>
+			<div class="form-group">
+				<label>Password</label>
+				<input type="password" class="form-control" name="password">
+			</div>
+
+			<button type="submit" class="btn btn-primary">Sign Up</button>
+		</form>
+
+		<hr>
+
+		<p>or try out our <a href="/practice">Practice Mode</a></p>
+	</div>
+</div>
+<% } else { %>
+
+	<h1>Display profile lah</h1>
+
 <% } %>
-
-Welcome to Word Finders!
-
-Please <a href="/login"> login</a> or <a href="/signup/"> sign up</a> to play.
-
-<br>
-<a href="/practice">Practice Mode</a>
-<br>
-<a href="/lobby">Challenge Mode</a>
 
 </body>
 </html>

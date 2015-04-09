@@ -4,45 +4,41 @@
 <html lang="en">
 
 <head>
-	<meta charset="utf-8">
-	<title>Word Finders | Login</title>
-	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css"> <!-- load bootstrap css -->
-	<script src="javascriptss/jquery-2.1.3.min.js"></script>
+	<% include partials/header %>
 </head>
 
 <body>
 
+<% include partials/navbar %>
+
 <div class="container">
 
-<div class="col-sm-6 col-sm-offset-3">
-
-	<h1><span class="fa fa-sign-in"></span> Signup</h1>
+	<div class="col-sm-6 col-sm-offset-3">
+		<h1>Sign Up</h1>
+		<br/>
 
 	<!-- show any messages that come back with authentication -->
 	<% if (message.length > 0) { %>
 		<div class="alert alert-danger"><%= message %></div>
 	<% } %>
 
-	<!-- LOGIN FORM -->
-	<form action="/signup" method="post">
-		<div class="form-group">
-			<label>Username</label>
-			<input type="text" class="form-control" name="username">
-		</div>
-		<div class="form-group">
-			<label>Password</label>
-			<input type="password" class="form-control" name="password">
-		</div>
+		<form action="/signup" method="post">
+			<div class="form-group">
+				<label>Username</label>
+				<input type="text" class="form-control" name="username">
+			</div>
+			<div class="form-group">
+				<label>Password</label>
+				<input type="password" class="form-control" name="password">
+			</div>
 
-		<button type="submit" class="btn btn-warning btn-lg">Signup</button>
-	</form>
+			<button type="submit" class="btn btn-primary">Sign Up</button>
+		</form>
 
-	<hr>
+		<hr>
 
-	<p>Already have an account? <a href="/login">Login</a></p>
-	<p>Or go <a href="/">home</a>.</p>
-
-</div>
+		<p>or try out our <a href="/practice">Practice Mode</a></p>
+	</div>
 
 </div>
 

@@ -192,6 +192,19 @@ function updateLists() {
 	$("#num_found").html(num_found);
 }
 
+function sendSolutionToServer() {
+	$.ajax({
+		type: "POST",
+		url: "/check-solution",
+		data: {
+			username: "clquang",
+			solution: solution
+		},
+		success: function (data) {
+		}
+	});
+}
+
 $(function() {
 	initializeCanvas();
 	initializePuzzle();
@@ -226,16 +239,7 @@ $(function() {
 			});
 
 			if (numFound === words.length) {
-				$.ajax({
-					type: "POST",
-					url: "/check-solution",
-					data: {
-						username: "clquang",
-						solution: solution
-					},
-					success: function (data) {
-					}
-				});
+				sendSolutionToServer();
 			}
 		} else {
 			if (wordDisplay.html() !== "") {

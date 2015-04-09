@@ -1,0 +1,50 @@
+<!-- views/partials/nav-bar.ejs -->
+
+<nav class="navbar navbar-default navbar-fixed-top">
+	<div class="container">
+		<div class="navbar-header">
+			<a class="navbar-brand" href="/">Word Finders</a>
+		</div>
+		<ul class="nav navbar-nav">
+		<% if (user) { %>
+			<% if (locals.page === "practice") { %>
+				<li class="active">
+			<% } else { %>
+				<li>
+			<% } %>
+					<a href="/practice">Practice Mode</a></li>
+			
+			<% if (locals.page === "challenge") { %>
+				<li class="active">
+			<% } else { %>
+				<li>
+			<% } %>
+				<a href="/challenge">Challenge Mode</a></li>
+
+		<% } %>
+		</ul>
+
+		<ul class="nav navbar-nav navbar-right">
+		<% if (!locals.user) {
+			if (!locals.login) { %>
+				<form class="navbar-form navbar-right" action="/login" method="post">
+					<label>Username: </label>
+					<input type="text" name="username">
+					<label>Password: </label>
+					<input type="password" name="password">
+					<label>Remember Me</label>
+					<input type="checkbox" name="remember" value="yes">
+					<button type="submit" class="btn btn-primary">Login</button>
+				</form>
+			<% } %>
+		<% } else { %>
+			<li><p class="navbar-text">Hi <%= user.username %></p></li>
+			<li>
+				<form action="/logout" method="get">
+					<button class="btn btn-default navbar-btn">Log Out</button>
+				</form>
+			</li>
+		<% } %>
+		</ul>
+	</div>
+</nav>
