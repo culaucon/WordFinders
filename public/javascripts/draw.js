@@ -158,6 +158,8 @@ function drawSolution() {
 }
 
 function drawBoard() {
+	drawSolution();
+	
 	context.fillStyle = "black";
 	context.beginPath();
 	context.rect(0, 0, SIZE, SIZE);
