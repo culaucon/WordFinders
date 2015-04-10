@@ -12,8 +12,12 @@ var PORT = 3000;
 var app = express();
 
 // PostgreSQL setup
-query.connectionParameters = "postgres://cp3101b:cp3101b@localhost/wordfinders";
-//query.connectionParameters = process.env.DATABASE_URL;
+if (process.env.DATABASE_URL) {
+	query.connectionParameters = process.env.DATABASE_URL;
+} else {
+	query.connectionParameters = "postgres://cp3101b:cp3101b@localhost/wordfinders";
+}
+
 
 // Passport setup
 app.use(expressSession({secret: "secret session"}));
@@ -80,6 +84,10 @@ app.get("/logout", function(req, res) {
 
 app.get("/practice", function(req, res) {
 	res.render("practice.ejs", {page: "practice"});
+});
+
+app.get("/challenge", function(req, res) {
+	res.render("challenge.ejs", {page: "challenge"});
 });
 
 app.post("/gen-puzzle", function(req, res) {

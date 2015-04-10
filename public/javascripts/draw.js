@@ -5,20 +5,23 @@ const dx = [-1, -1, -1, 0, 1, 1, 1, 0];
 const dy = [-1, 0, 1, 1, 1, 0, -1, -1];
 const POSITIVE = ["NICE", "AWESOME", "COOL", "GOOD JOB", "WELL DONE", "WELL PLAYED"];
 const FADING_TIME = 1000;
-const TIME_PENALTY = 0;
+const PUZZLE_TIME = 1000 * 10; // 1 minute
+const INTERVAL = 10;
+const DANGER_TIME = 1000 * 10; // 10 seconds
+const SHOW_CYCLE = 90;
+const HIDE_CYCLE = 10;
 
 var canvas;
 var context;
 var puzzle, words, solution;
-var solutionParams;
-var numFound;
-var stringToID;
+var solutionParams, numFound, stringToID;
 var initX = -1, initY = -1, finalX, finalY, dir, centerX, centerY, unit, len, angle;
 var mouseUp = true;
 var wordDisplay;
-var lastTime = 0;
 var username;
 var string;
+var timeLeft;
+var counter;
 
 function getCoordinates(event) {
 	var x = parseInt((event.clientY - canvas.getBoundingClientRect().top) / (SIZE / N));
@@ -31,7 +34,6 @@ function initializeCanvas() {
 	context = canvas.getContext("2d");
 	
 	canvas.addEventListener("mousedown", function(event) {
-		if ((new Date()).getTime() - lastTime <= TIME_PENALTY) return;
 		var coordinates = getCoordinates(event);
 		initX = coordinates[0];
 		initY = coordinates[1];
@@ -39,7 +41,6 @@ function initializeCanvas() {
 
 	canvas.addEventListener("mousemove", function(event) {
 		if (initX === -1 || initY === -1 || mouseUp) return;
-		if ((new Date()).getTime() - lastTime <= TIME_PENALTY) return;
 		var coordinates = getCoordinates(event);
 		var x = coordinates[0], y = coordinates[1];
 		centerX = (initY + 0.5) * SIZE / N;
@@ -158,8 +159,6 @@ function drawSolution() {
 }
 
 function drawBoard() {
-	drawSolution();
-	
 	context.fillStyle = "black";
 	context.beginPath();
 	context.rect(0, 0, SIZE, SIZE);
@@ -207,11 +206,8 @@ function sendSolutionToServer() {
 	});
 }
 
-$(function() {
-	initializeCanvas();
-	initializePuzzle();
-	wordDisplay = $("#word-display");
-	document.addEventListener("mouseup", function(e) {
+function initializeDocument() {
+		document.addEventListener("mouseup", function(e) {
 		if (stringToID[string]) {
 			var i = stringToID[string] - 1;
 			if (!solutionParams[i]) {
@@ -233,7 +229,6 @@ $(function() {
 			wordDisplay.html(string);
 			wordDisplay.stop(true, true);
 			wordDisplay.show();
-			lastTime = (new Date()).getTime();
 			wordDisplay.removeAttr("class").addClass("positive");
 			wordDisplay.fadeOut(FADING_TIME, function() {
 				wordDisplay.html("");
@@ -244,9 +239,6 @@ $(function() {
 				sendSolutionToServer();
 			}
 		} else {
-			if (wordDisplay.html() !== "") {
-				lastTime = (new Date()).getTime();
-			}
 			wordDisplay.stop(true, true);
 			wordDisplay.show();
 			if (wordDisplay.hasClass("normal")) wordDisplay.removeAttr("class").addClass("negative");
@@ -263,4 +255,52 @@ $(function() {
 	document.addEventListener("mousedown", function(e) {
 		mouseUp = false;
 	});
+}
+
+function initializeTimer() {
+	var timer = $("#timer");
+	timeLeft = PUZZLE_TIME / INTERVAL;
+	var cnt = 0;
+	counter = setInterval(
+		function() {
+			if (timeLeft <= 0) {
+				timer.html("0.0");
+				timer.css("visiblility", "visible");
+				clearInterval(counter);
+				alert("finished liao");
+				return;
+			}
+			timeLeft--;
+			var sec = parseInt(timeLeft * INTERVAL / 1000), dsec = parseInt(timeLeft / 10 % 10);
+			if (timeLeft < DANGER_TIME / INTERVAL) {
+				timer.css("color", "red");
+				/*if (cnt === 0) {
+					if (timer.css("visibility") === "visible") {
+						timer.css("visibility", "hidden");
+					} else {
+						timer.css("visibility", "visible");
+					}
+				}
+				cnt = (cnt + 1) % BLINK_CYCLE;*/
+				if (cnt < SHOW_CYCLE - 1) {
+					timer.css("visibility", "visible");
+				} else {
+					timer.css("visibility", "hidden");
+				}
+				cnt = (cnt + 1) % (SHOW_CYCLE + HIDE_CYCLE);
+				timer.html(sec + "." + dsec);
+			} else {
+				timer.html(sec);
+			}
+		},
+		INTERVAL
+	);
+}
+
+$(function() {
+	initializeDocument();
+	initializeCanvas();
+	initializePuzzle();
+	initializeTimer();
+	wordDisplay = $("#word-display");
 })
