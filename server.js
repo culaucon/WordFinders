@@ -82,6 +82,10 @@ app.get("/practice", function(req, res) {
 	res.render("practice.ejs", {page: "practice"});
 });
 
+app.get("/challenge", function(req, res) {
+	res.render("challenge.ejs", {page: "challenge"});
+});
+
 app.post("/gen-puzzle", function(req, res) {
 	res.send(puzzle.generatePuzzle());
 });
