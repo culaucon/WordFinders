@@ -5,7 +5,7 @@
 
 <head>
 	<% include partials/header %>
-	<script src="javascripts/draw.js"></script>
+	<script src="javascripts/challenge.js"></script>
 </head>
 
 <body>
@@ -14,29 +14,45 @@
 
 <div class="container">
 	<div class="row">
-		<div class="col-mid-6 col-mid-offset-3" align="center">
-			<div>
-				<span id="timer"></span>
-			</div>
-		</div>
-	</div>
+		<div class="col-md-6">
+			<span>
+			<% if (locals.challenges_list && locals.challenges_list.length > 0) { %>
+				You have <%= locals.challenges_list.length %> challenge(s) from:
+			<% } else { %>
+				You have 0 challenge(s).
+			<% } %>
+			</span>
 
-	<div class="row">
-		<div class="col-md-6 col-md-offset-3" align="center">
-			<canvas id="puzzle" width="480px" height="480px"></canvas>
-		</div>
-		<div class="noselect" id="to-find">
-			<b>To-find (</b><b id="num_to_find"></b><b>):</b><br/>
-		</div>
-		<br/>
-		<div class="noselect" id="found">
-			<b>Found (</b><b id="num_found"></b><b>):</b><br/>
-		</div>
-	</div>
+			<% if (locals.challenges_list && locals.challenges_list.length > 0) { %>
+			<ul class="list-group">
+			<% for (var i = 0; i < locals.challenges_list.length; i++) { %>
+				<a class="list-group-item" href="/challenge?reply=1&opponent=<%= locals.challenges_list[i] %>"><%= locals.challenges_list[i] %></a>
+			<% } %>
+			</ul>
+			<% } %>
+			
+			<br/><br/>
+			<span>
+			<% if (locals.unanswered_list && locals.unanswered_list.length > 0) { %>
+				You have <%= locals.unanswered_list.length %> unanswered challenge(s) to:
+			<% } else { %>
+				You have 0 unanswered challenge(s).
+			<% } %>
+			</span>
 
-	<div class="row">
-		<div class="col-md-6 col-md-offset-3" align="center">
-			<span id="word-display"></span>
+			<% if (locals.unanswered_list && locals.unanswered_list.length > 0) { %>
+			<ul class="list-group">
+			<% for (var i = 0; i < locals.unanswered_list.length; i++) { %>
+				<a class="list-group-item"><%= locals.unanswered_list[i] %></a>
+			<% } %>
+			</ul>
+			<% } %>
+		</div>
+		<div class="col-md-6" align="center">
+			<input type="text" id="user_search" placeholder="Search for user">
+			<button id="search" class="btn">Search</button>
+			<br/><br/>
+			<ul class="list-group" id="user_list"></ul>
 		</div>
 	</div>
 </div>

@@ -33,3 +33,19 @@ body {
 #timer {
 	font-size: 20px;
 }
+
+a.list-group-item {
+	width: 300px;
+}
+
+span.win {
+	color: green;
+}
+
+span.lose {
+	color: red;
+}
+
+span.draw {
+	color: orange;
+}

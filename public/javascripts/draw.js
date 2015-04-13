@@ -3,25 +3,30 @@ const SIZE = 480;
 const FILE_PATH = "words.txt";
 const dx = [-1, -1, -1, 0, 1, 1, 1, 0];
 const dy = [-1, 0, 1, 1, 1, 0, -1, -1];
-const POSITIVE = ["NICE", "AWESOME", "COOL", "GOOD JOB", "WELL DONE", "WELL PLAYED"];
 const FADING_TIME = 1000;
-const PUZZLE_TIME = 1000 * 10; // 1 minute
+const PUZZLE_TIME = 1000 * 60; // 1 minute
 const INTERVAL = 10;
 const DANGER_TIME = 1000 * 10; // 10 seconds
 const SHOW_CYCLE = 90;
 const HIDE_CYCLE = 10;
 
-var canvas;
-var context;
+var canvas, context;
 var puzzle, words, solution;
 var solutionParams, numFound, stringToID;
 var initX = -1, initY = -1, finalX, finalY, dir, centerX, centerY, unit, len, angle;
 var mouseUp = true;
-var wordDisplay;
+var wordDisplay, string;
 var username;
-var string;
-var timeLeft;
-var counter;
+var counter, timeLeft;
+var opponent, reply;
+
+function storeOpponent(opp) {
+	opponent = opp;
+}
+
+function storeReply(rep) {
+	reply = rep;
+}
 
 function getCoordinates(event) {
 	var x = parseInt((event.clientY - canvas.getBoundingClientRect().top) / (SIZE / N));
@@ -33,13 +38,13 @@ function initializeCanvas() {
 	canvas = document.getElementById("puzzle");
 	context = canvas.getContext("2d");
 	
-	canvas.addEventListener("mousedown", function(event) {
+	$("#puzzle").on("mousedown", function(event) {
 		var coordinates = getCoordinates(event);
 		initX = coordinates[0];
 		initY = coordinates[1];
 	});
 
-	canvas.addEventListener("mousemove", function(event) {
+	$("#puzzle").on("mousemove", function(event) {
 		if (initX === -1 || initY === -1 || mouseUp) return;
 		var coordinates = getCoordinates(event);
 		var x = coordinates[0], y = coordinates[1];
@@ -92,18 +97,15 @@ function initializeCanvas() {
 		wordDisplay.removeAttr("class").addClass("normal");
 		
 		drawSolution();
-		//context.clearRect(0, 0, SIZE, SIZE);
 		drawRect(centerX, centerY, angle, len, unit, false);
 		drawBoard();
 	});
 
-	canvas.addEventListener("mouseup", function(event) {
+	$("#puzzle").on("mouseup", function(event) {
 		if (initX === -1 || initY === -1) return;
 		context.clearRect(0, 0, SIZE, SIZE);
 		drawSolution();
 		drawBoard();
-		initX = -1;
-		initY = -1;
 	});
 	
 }
@@ -122,25 +124,6 @@ function drawRect(centerX, centerY, angle, len, unit, isSolution) {
 	context.stroke();
 	context.rotate(-angle);
 	context.translate(-centerX, -centerY);
-}
-
-function initializePuzzle() {
-	$.ajax({
-		type: "POST",
-		url: "/gen-puzzle",
-		success: function (data) {
-			puzzle = data.grid;
-			words = data.words;
-			solution = new Array(words.length);
-			solutionParams = new Array(words.length);
-			stringToID = {};
-			for (var i = 0; i < words.length; i++) stringToID[words[i]] = i + 1;
-			numFound = 0;
-			drawSolution();
-			drawBoard();
-			updateLists();
-		}
-	});
 }
 
 function drawSolution() {
@@ -179,35 +162,127 @@ function drawBoard() {
 function updateLists() {
 	$("#to-find").find("span").remove();
 	$("#found").find("span").remove();
-	var num_to_find = 0, num_found = 0;
+	var num_to_find = 0;
+	numFound = 0;
 	for (var i = 0; i < words.length; i++) {
 		if (!solution[i]) {
 			num_to_find++;
 			$("#to-find").append("<span id=word-" + i + ">" + words[i] + "<br/></span>");
 		} else {
-			num_found++;
+			numFound++;
 			$("#found").append("<span class='found' id=word-" + i + ">" + words[i] + "<br/></span>");
 		}
 	}
 	$("#num_to_find").html(num_to_find);
-	$("#num_found").html(num_found);
+	$("#num_found").html(numFound);
+}
+
+function getCookie(name) {
+	var value = "; " + document.cookie;
+	var parts = value.split("; " + name + "=");
+	if (parts.length == 2) return parts.pop().split(";").shift();
+}
+
+function detachListeners() {
+	$("#puzzle").off("mousedown");
+	$("#puzzle").off("mouseover");
+	$("#puzzle").off("up");
+	$(document).off("mousedown");
+	$(document).off("mouseup");
+	wordDisplay.hide();
 }
 
 function sendSolutionToServer() {
-	$.ajax({
-		type: "POST",
-		url: "/check-solution",
-		data: {
-			username: "clquang",
-			solution: solution
-		},
-		success: function (data) {
+	detachListeners();
+	if (!username || !opponent) {
+		if (timeLeft > 0) {
+			alert("Congratulations, you have found all the words!");
+			return;
+		} else {
+			alert("Time is up! You have found " + numFound + "/" + words.length + " words.");
 		}
-	});
+	} else {
+		$.ajax({
+			type: "POST",
+			url: "/submit-solution",
+			data: {
+				username: username,
+				opponent: opponent,
+				solution: JSON.stringify(solution),
+				time_left: timeLeft,
+				reply: reply
+			},
+			success: function (data) {
+				alert(data);
+			}
+		});
+	}
+}
+
+function initializePuzzle() {
+	if (opponent) {
+		// Challenge mode
+		$.ajax({
+			type: "POST",
+			url: "/gen-puzzle-challenge",
+			data: {
+				opponent: opponent,
+				reply: reply
+			},
+			success: function(data) {
+				if (data.message && data.redirect) {
+					$("body").empty();
+					alert(data.message);
+					window.location.replace(data.redirect);
+					return;
+				}
+				puzzle = data.puzzle.grid;
+				words = data.puzzle.words;
+
+				initializeDocument();
+				initializeCanvas();
+				initializeTimer(data.time_left);
+
+				solution = new Array(words.length);
+				solutionParams = new Array(words.length);
+				stringToID = {};
+				for (var i = 0; i < words.length; i++) stringToID[words[i]] = i + 1;
+				numFound = 0;
+				drawSolution();
+				drawBoard();
+				updateLists();
+			}
+		});
+	} else {
+		// Practice mode
+		$.ajax({
+			type: "POST",
+			url: "/gen-puzzle-practice",
+			success: function(data) {
+				puzzle = data.grid;
+				words = data.words;
+
+				initializeDocument();
+				initializeCanvas();
+				initializeTimer();
+
+				solution = new Array(words.length);
+				solutionParams = new Array(words.length);
+				stringToID = {};
+				for (var i = 0; i < words.length; i++) stringToID[words[i]] = i + 1;
+				numFound = 0;
+				drawSolution();
+				drawBoard();
+				updateLists();
+			}
+		});
+	}
 }
 
 function initializeDocument() {
-		document.addEventListener("mouseup", function(e) {
+	wordDisplay = $("#word-display");
+	username = getCookie("username");
+	$(document).on("mouseup", function(e) {
 		if (stringToID[string]) {
 			var i = stringToID[string] - 1;
 			if (!solutionParams[i]) {
@@ -236,6 +311,7 @@ function initializeDocument() {
 			});
 
 			if (numFound === words.length) {
+				clearInterval(counter);
 				sendSolutionToServer();
 			}
 		} else {
@@ -251,45 +327,38 @@ function initializeDocument() {
 		context.clearRect(0, 0, SIZE, SIZE);
 		drawSolution();
 		drawBoard();
+		initX = -1;
+		initY = -1;
+		string = "";
 	});
-	document.addEventListener("mousedown", function(e) {
+	$(document).on("mousedown", function(e) {
 		mouseUp = false;
 	});
 }
 
-function initializeTimer() {
+function initializeTimer(time_left) {
 	var timer = $("#timer");
-	timeLeft = PUZZLE_TIME / INTERVAL;
+	if (typeof time_left !== "undefined") timeLeft = time_left * 100;
+	else timeLeft = PUZZLE_TIME / INTERVAL;
 	var cnt = 0;
 	counter = setInterval(
 		function() {
 			if (timeLeft <= 0) {
-				timer.html("0.0");
-				timer.css("visiblility", "visible");
+				timer.css("visiblility", "hidden");
 				clearInterval(counter);
-				alert("finished liao");
-				return;
-			}
-			timeLeft--;
-			var sec = parseInt(timeLeft * INTERVAL / 1000), dsec = parseInt(timeLeft / 10 % 10);
-			if (timeLeft < DANGER_TIME / INTERVAL) {
-				timer.css("color", "red");
-				/*if (cnt === 0) {
-					if (timer.css("visibility") === "visible") {
-						timer.css("visibility", "hidden");
-					} else {
-						timer.css("visibility", "visible");
-					}
-				}
-				cnt = (cnt + 1) % BLINK_CYCLE;*/
-				if (cnt < SHOW_CYCLE - 1) {
-					timer.css("visibility", "visible");
-				} else {
-					timer.css("visibility", "hidden");
-				}
-				cnt = (cnt + 1) % (SHOW_CYCLE + HIDE_CYCLE);
-				timer.html(sec + "." + dsec);
+				sendSolutionToServer();
 			} else {
+				timeLeft--;
+				var sec = parseInt(timeLeft * INTERVAL / 1000);
+				if (timeLeft < DANGER_TIME / INTERVAL) {
+					timer.css("color", "red");
+					if (cnt < SHOW_CYCLE - 1) {
+						timer.css("visibility", "visible");
+					} else {
+						timer.css("visibility", "hidden");
+					}
+					cnt = (cnt + 1) % (SHOW_CYCLE + HIDE_CYCLE);
+				}
 				timer.html(sec);
 			}
 		},
@@ -298,9 +367,5 @@ function initializeTimer() {
 }
 
 $(function() {
-	initializeDocument();
-	initializeCanvas();
 	initializePuzzle();
-	initializeTimer();
-	wordDisplay = $("#word-display");
 })

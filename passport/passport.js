@@ -9,17 +9,17 @@ module.exports = function(passport, query) {
 	
 	passport.deserializeUser(function(id, done) {
 		query("SELECT * FROM users WHERE id = $1", [id], function(err, rows, result) {
-	 		if (err) {
+			if (err) {
 				return console.error('error running query', err);
-		    }
+			}
 			done(err, rows[0]);
 		});
 	});
 	
 	passport.use("local-login", new LocalStrategy({
-			usernameField: "username",
-			passwordField: "password",
-			passReqToCallback: true
+		usernameField: "username",
+		passwordField: "password",
+		passReqToCallback: true
 		}, function(req, username, password, done) {
 			query("SELECT * FROM users WHERE username = $1", [username], function(err, rows, result) {
 				if (err) return done(err);

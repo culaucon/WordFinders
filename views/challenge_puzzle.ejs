@@ -1,0 +1,45 @@
+<!-- views/challenge_puzzle.ejs -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<% include partials/header %>
+	<script onload="storeOpponent('<%= opponent %>');storeReply(<%= reply %>);" src="javascripts/draw.js"></script>
+</head>
+
+<body>
+
+<% include partials/navbar %>
+
+<div class="container">
+	<div class="row">
+		<div class="col-mid-6 col-mid-offset-3" align="center">
+			<div>
+				<span id="timer"></span>
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-6 col-md-offset-3" align="center">
+			<canvas id="puzzle" width="480px" height="480px"></canvas>
+		</div>
+		<div class="noselect" id="to-find">
+			<b>To-find (</b><b id="num_to_find"></b><b>):</b><br/>
+		</div>
+		<br/>
+		<div class="noselect" id="found">
+			<b>Found (</b><b id="num_found"></b><b>):</b><br/>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-6 col-md-offset-3" align="center">
+			<span id="word-display"></span>
+		</div>
+	</div>
+</div>
+
+</body>
+</html>

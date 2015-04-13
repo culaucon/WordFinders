@@ -1,0 +1,12 @@
+create table challenges(match_id serial primary key, username varchar(40) not null, opponent varchar(40) not null, first_score integer, second_score integer, user_time timestamp with time zone, opponent_time timestamp with time zone, puzzle text not null);
+grant select, insert, update, delete on table challenges to cp3101b;
+grant usage, select on sequence challenges_match_id_seq to cp3101b;
+
+
+
+create table results(username varchar(40) not null, recent text);
+grant select, insert, update, delete on table results to cp3101b;
+
+
+delete from challenges where match_id >= 1;
+alter sequence match_id_seq restart with 1;

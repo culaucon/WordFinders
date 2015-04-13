@@ -7,6 +7,7 @@ var expressSession = require("express-session");
 var flash = require("connect-flash");
 var passport = require("passport");
 var puzzle = require("./puzzle/puzzle");
+var userSearch = require("./usersearch/usersearch");
 var PORT = 3000;
 
 var app = express();
@@ -28,7 +29,7 @@ require("./passport/passport")(passport, query);
 // Express setup
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
-	extended: true
+	extended: false
 }));
 app.use(cookieParser());
 app.use(flash());
@@ -45,7 +46,13 @@ app.dynamicHelpers({
 
 // Routes setup
 app.get("/", function(req, res) {
-	res.render("index.ejs");
+	if (!req.user) {
+		res.render("index.ejs", {page: "home"});
+	} else {
+		puzzle.searchResults(query, req.user.username, function(recent) {
+			res.render("index.ejs", {page: "home", recent: recent});
+		});
+	}
 });
 
 app.get("/login", function(req, res) {
@@ -57,10 +64,11 @@ app.post("/login", passport.authenticate("local-login", {
 		failureRedirect: "/login",
 		failureFlash: true
 	}), function(req, res) {
+		res.cookie("username", req.user.username);
 		if (req.body.remember) {
-			req.cookies.maxAge = 1000 * 60 * 3;
+			res.cookie("maxAge", 1000 * 60 * 3);
 		} else {
-			req.cookies.expires = false;
+			res.cookie("expires", "false");
 		}
 		res.redirect("/");
 	}
@@ -87,16 +95,67 @@ app.get("/practice", function(req, res) {
 });
 
 app.get("/challenge", function(req, res) {
-	res.render("challenge.ejs", {page: "challenge"});
+	if (!req.user) {
+		res.redirect("/login");
+	} else {
+		if (!req.param("opponent")) {
+			puzzle.searchChallenges(query, req.user.username, function(challenges_list, unanswered_list) {
+				res.render("challenge.ejs", {page: "challenge", challenges_list: challenges_list, unanswered_list: unanswered_list});
+			});
+		} else {
+			res.render("challenge_puzzle.ejs", {page: "challenge", opponent: req.param("opponent"), reply: req.param("reply")});
+		}
+	}
 });
 
-app.post("/gen-puzzle", function(req, res) {
+app.post("/gen-puzzle-practice", function(req, res) {
 	res.send(puzzle.generatePuzzle());
 });
 
-app.post("/check-solution", function(req, res){
-	puzzle.checkSolution(req.body.username, req.body.solution);
-	res.send();
+app.post("/gen-puzzle-challenge", function(req, res) {
+	var opponent = req.body.opponent;
+	userSearch.search(opponent, query, function(username) {
+		if (username === "") {
+			res.send({
+				page: "challenge",
+				opponent: opponent,
+				message: opponent + " is not a valid user to challenge. Please find another user.",
+				redirect: "/challenge"
+			});
+		} else {
+			puzzle.generatePuzzleChallenge(query, req.user.username, username, req.body.reply, function(status, puzzle) {
+				var data = {
+					opponent: opponent,
+					page: "challenge"
+				}
+				if (status === "old") {
+					data.time_left = puzzle.time_left;
+					data.puzzle = puzzle.puzzle;
+				} else {
+					data.puzzle = puzzle;
+				}
+				res.send(data);
+			});
+		}
+	});
+});
+
+app.post("/submit-solution", function(req, res) {
+	puzzle.submitSolution(query, req.body.username, req.body.opponent, JSON.parse(req.body.solution), req.body.time_left, req.body.reply, function(data) {
+		res.send(data);
+	});
+});
+
+app.post("/user-search", function(req, res) {
+	if (req.body.like) {
+		userSearch.searchLike(req.body.user, query, function(list) {
+			res.send(list);
+		});
+	} else {
+		userSearch.search(req.body.user, query, function(username) {
+			res.send(username);
+		});
+	}
 });
 
 if (process.env.PORT) {

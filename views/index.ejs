@@ -38,8 +38,40 @@
 </div>
 <% } else { %>
 
-	<h1>Display profile lah</h1>
+<div class="container">
+	<div class="row">
+		<div class="col-sm-6 col-sm-offset-3" align="center">
+			<h1><%= user.username %></h1>
 
+			<br/><br/>
+
+			<span>
+			<% if (locals.recent && locals.recent[0]) { %>
+				Most recent results:
+			<% } %>
+			</span>
+
+			<% if (locals.recent && locals.recent.length > 0) { %>
+			<ul class="list-group">
+			<% for (var i = 0; i < locals.recent.length; i++) { %>
+			<% if (locals.recent[i]) { %>
+				<a class="list-group-item">
+				<% if (locals.recent[i].verdict === 0) { %>
+					<span class="win">WIN </span>
+				<% } else if (locals.recent[i].verdict === 1) { %>
+					<span class="lose">LOSE </span>
+				<% } else { %>
+					<span class="draw">DRAW </span>
+				<% } %>
+
+					against <%= locals.recent[i].opponent %></a>
+			<% } %>
+			<% } %>
+			</ul>
+			<% } %>
+		</div>
+	</div>
+</div>
 <% } %>
 
 </body>

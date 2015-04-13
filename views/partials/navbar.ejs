@@ -1,4 +1,4 @@
-<!-- views/partials/nav-bar.ejs -->
+<!-- views/partials/navbar.ejs -->
 
 <nav class="navbar navbar-default navbar-fixed-top">
 	<div class="container">
@@ -7,12 +7,19 @@
 		</div>
 		<ul class="nav navbar-nav">
 		<% if (user) { %>
+			<% if (locals.page === "home") { %>
+				<li class="active">
+			<% } else { %>
+				<li>
+			<% } %>
+				<a href="/">Home</a></li>
+
 			<% if (locals.page === "practice") { %>
 				<li class="active">
 			<% } else { %>
 				<li>
 			<% } %>
-					<a href="/practice">Practice Mode</a></li>
+				<a href="/practice">Practice Mode</a></li>
 			
 			<% if (locals.page === "challenge") { %>
 				<li class="active">
