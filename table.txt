@@ -8,5 +8,11 @@ create table results(username varchar(40) not null, recent text);
 grant select, insert, update, delete on table results to cp3101b;
 
 
+create table stats(username varchar(40) not null, rating integer, win integer, lose integer, draw integer);
+grant select, insert, update, delete on table stats to cp3101b;
+
+
+
 delete from challenges where match_id >= 1;
-alter sequence match_id_seq restart with 1;
+alter sequence challenges_match_id_seq restart with 1;
+

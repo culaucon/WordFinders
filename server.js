@@ -6,8 +6,11 @@ var query = require("pg-query");
 var expressSession = require("express-session");
 var flash = require("connect-flash");
 var passport = require("passport");
+var elo = require("elo-rank")(32);
 var puzzle = require("./puzzle/puzzle");
 var userSearch = require("./usersearch/usersearch");
+var rating = require("./rating/rating");
+
 var PORT = 3000;
 
 var app = express();
@@ -50,7 +53,9 @@ app.get("/", function(req, res) {
 		res.render("index.ejs", {page: "home"});
 	} else {
 		puzzle.searchResults(query, req.user.username, function(recent) {
-			res.render("index.ejs", {page: "home", recent: recent});
+			rating.getStats(query, req.user.username, function(stats) {
+				res.render("index.ejs", {page: "home", recent: recent, stats: stats});
+			})
 		});
 	}
 });
@@ -141,7 +146,8 @@ app.post("/gen-puzzle-challenge", function(req, res) {
 });
 
 app.post("/submit-solution", function(req, res) {
-	puzzle.submitSolution(query, req.body.username, req.body.opponent, JSON.parse(req.body.solution), req.body.time_left, req.body.reply, function(data) {
+	puzzle.submitSolution(query, req.body.username, req.body.opponent, JSON.parse(req.body.solution), req.body.time_left, req.body.reply, function(data, verdict) {
+		if  (req.body.reply) rating.updateRatings(query, elo, req.body.username, req.body.opponent, verdict);
 		res.send(data);
 	});
 });
