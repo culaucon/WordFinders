@@ -23,11 +23,12 @@ var generatePuzzle = function() {
 		var n = words.length;
 		var chosen = new Array(n);
 		list = new Array();
+		var total_length = 0;
 	
 		for (var cnt = 0; cnt < NUM_WORDS; cnt++) {
 			while (true) {
 				var k = parseInt(Math.random() * n);
-				if (words[k].length < 3 || words[k].length > N || chosen[k]) continue;
+				if (words[k].length < 3 || words[k].length > N || chosen[k] || total_length + words[k].length > 6 * (cnt + 1)) continue;
 				var ok = true;
 				for (var i = 0; i < cnt; i++) {
 					if (list[i].indexOf(words[k]) != -1 || words[k].indexOf(list[i]) != -1) ok = false;
@@ -50,6 +51,8 @@ var generatePuzzle = function() {
 							}
 						}
 				if (pos.length == 0) continue;
+				chosen[k] = true;
+				total_length += words[k].length;
 				list.push(words[k].toUpperCase());
 				var id = parseInt(Math.random() * pos.length);
 				var x = parseInt(pos[id] / 8 / N), y = parseInt((pos[id] / 8)) % N, dir = pos[id] % 8;

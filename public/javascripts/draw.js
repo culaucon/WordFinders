@@ -195,12 +195,8 @@ function detachListeners() {
 function sendSolutionToServer() {
 	detachListeners();
 	if (!username || !opponent) {
-		if (timeLeft > 0) {
-			alert("Congratulations, you have found all the words!");
-			return;
-		} else {
-			alert("Time is up! You have found " + numFound + "/" + words.length + " words.");
-		}
+		alert("Congratulations, you have found all the words!");
+		return;
 	} else {
 		$.ajax({
 			type: "POST",
@@ -337,6 +333,8 @@ function initializeDocument() {
 }
 
 function initializeTimer(time_left) {
+	if (!opponent) return; // Practice mode, unlimited timing
+
 	var timer = $("#timer");
 	if (typeof time_left !== "undefined") timeLeft = time_left * 100;
 	else timeLeft = PUZZLE_TIME / INTERVAL;
