@@ -206,10 +206,10 @@ var updateResult = function(query, username, opponent, first_score, second_score
 
 			recent[0] = {
 				opponent: opponent,
-				verdict: (first_score === second_score) ? 2 : (first_score > second_score) ? 0 : 1 // win: 0, lose: 1, draw: 2
+				verdict: (first_score == second_score) ? 2 : (first_score > second_score) ? 0 : 1 // win: 0, lose: 1, draw: 2
 			}
 
-			query("UPDATE results SET recent = $1 WHERE username = $2", [JSON.stringify(recent), username], function(err, rows, resuls) {
+			query("UPDATE results SET recent = $1 WHERE username = $2", [JSON.stringify(recent), username], function(err, rows, results) {
 				if (err) {
 					return console.error('error running query', err);
 				}
