@@ -7,7 +7,7 @@ const FILE_PATH = "./words.txt";
 const dx = [-1, -1, -1, 0, 1, 1, 1, 0];
 const dy = [-1, 0, 1, 1, 1, 0, -1, -1];
 
-var generatePuzzle = function () {
+var generatePuzzle = function() {
 	var puzzle;
 	var list;
 	
@@ -250,7 +250,7 @@ var submitSolution = function(query, username, opponent, solution, time_left, re
 
 				console.log(current_timestamp, last_timestamp);
 				console.log("solution, time diff = " + time_diff);
-				if (time_diff >= 0 && time_diff <= 3) {
+				if (time_diff <= 10) {
 					var score = countScore(grid, words, solution);
 					cb("Your score: " + score + ".");
 					insertUserScore(query, username, opponent, score);
@@ -275,7 +275,7 @@ var submitSolution = function(query, username, opponent, solution, time_left, re
 				var other_score = rows[0].first_score, score = 0;
 				var str = "";
 
-				if (time_diff >= 0 && time_diff <= 3) {
+				if (time_diff <= 10) {
 					score = countScore(grid, words, solution);
 					insertOpponentScore(query, username, opponent, score);
 				} else {
@@ -283,12 +283,16 @@ var submitSolution = function(query, username, opponent, solution, time_left, re
 					insertOpponentScore(query, username, opponent, 0);
 				}
 				str += "Your score: " + score + ". Friend's score: " + other_score + ". Result: ";
+				var verdict;
 				if (score > other_score) {
 					str += "You win.";
+					verdict = 0;
 				} else if (score < other_score) {
 					str += "You lose.";
+					verdict = 1;
 				} else {
 					str += "Draw.";
+					verdict = 2;
 				}
 
 				updateResult(query, username, opponent, score, other_score);
@@ -298,7 +302,7 @@ var submitSolution = function(query, username, opponent, solution, time_left, re
 						return console.error('error running query', err);
 					}
 				});
-				cb(str);
+				cb(str, verdict);
 			});
 		}
 	});
