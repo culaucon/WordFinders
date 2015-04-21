@@ -19,7 +19,7 @@ var updateRating = function(query, username, rating, verdict) {
 	});
 }
 
-var updateRatings = function(query, elo, username, opponent, verdict) {
+var updateRatings = function(query, elo, username, opponent, reply, verdict) {
 	var first_rating, second_rating;
 	query("SELECT * FROM stats WHERE username = $1", [username], function(err, rows, results) {
 		if (err) {
@@ -50,8 +50,6 @@ var updateRatings = function(query, elo, username, opponent, verdict) {
 			} else {
 				second_rating = rows[0].rating;
 			}
-
-			console.log(first_rating, second_rating);
 
 			var expected_first_score = elo.getExpected(first_rating, second_rating);
 			var expected_second_score = elo.getExpected(second_rating, first_rating);

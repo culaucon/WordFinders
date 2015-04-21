@@ -22,7 +22,6 @@ if (process.env.DATABASE_URL) {
 	query.connectionParameters = "postgres://cp3101b:cp3101b@localhost/wordfinders";
 }
 
-
 // Passport setup
 app.use(expressSession({secret: "secret session"}));
 app.use(passport.initialize());
@@ -136,6 +135,7 @@ app.post("/gen-puzzle-challenge", function(req, res) {
 				if (status === "old") {
 					data.time_left = puzzle.time_left;
 					data.puzzle = puzzle.puzzle;
+					data.sol = puzzle.sol;
 				} else {
 					data.puzzle = puzzle;
 				}
@@ -145,9 +145,15 @@ app.post("/gen-puzzle-challenge", function(req, res) {
 	});
 });
 
+app.post("/finalize", function(req, res) {
+	puzzle.finalize(query, req.body.username, req.body.opponent, req.body.reply, function(data, verdict) {
+		if (verdict != -1) rating.updateRatings(query, elo, req.body.username, req.body.opponent, req.body.reply, verdict);
+		res.send(data);
+	});
+});
+
 app.post("/submit-solution", function(req, res) {
-	puzzle.submitSolution(query, req.body.username, req.body.opponent, JSON.parse(req.body.solution), req.body.time_left, req.body.reply, function(data, verdict) {
-		if  (req.body.reply) rating.updateRatings(query, elo, req.body.username, req.body.opponent, verdict);
+	puzzle.submitSolution(query, req.body.username, req.body.opponent, JSON.parse(req.body.solution), req.body.time_left, req.body.reply, function(data) {
 		res.send(data);
 	});
 });

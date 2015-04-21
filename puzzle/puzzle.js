@@ -62,6 +62,7 @@ var generatePuzzle = function() {
 				break;
 			}
 		}
+console.log(puzzle);
 		for (var i = 0; i < 12; i++)
 			for (var j = 0; j < 12; j++)
 				if (puzzle[i][j] === ' ') {
@@ -73,10 +74,11 @@ var generatePuzzle = function() {
 	}
 
 	generate(fs.readFileSync(FILE_PATH, "utf8").split("\n"));
-	
+	list = list.sort();
+
 	var data = {
 		grid: puzzle,
-		words: list.sort()
+		words: list
 	}
 	return data;
 }
@@ -97,9 +99,7 @@ var generatePuzzleChallenge = function(query, username, opponent, reply, cb) {
 				if (rows[0] && rows[0].username) {
 					// On-going puzzle
 					var time_left = current_time - rows[0].time;
-					console.log("current time = " + current_time);
-					console.log("start time = " + rows[0].time);
-					console.log("time left = " + time_left);
+
 					if (time_left > 60) {
 						// Time limit exceeded
 						time_left = 0;
@@ -108,12 +108,14 @@ var generatePuzzleChallenge = function(query, username, opponent, reply, cb) {
 					}
 					var puzzle = {
 						puzzle: JSON.parse(rows[0].puzzle),
-						time_left: time_left
+						time_left: time_left,
+						sol: rows[0].user_sol
 					}
 					cb("old", puzzle);
 				} else {
 					var data = generatePuzzle();
-					query("INSERT INTO challenges (username, opponent, user_time, puzzle) VALUES ($1, $2, NOW(), $3)", [username, opponent, JSON.stringify(data)], function(err, rows, result) {
+					query("INSERT INTO challenges (username, opponent, user_time, puzzle, user_sol, opponent_sol, user_score, opponent_score) VALUES ($1, $2, NOW(), $3, $4, $5, 0, 0)",
+						[username, opponent, JSON.stringify(data), JSON.stringify(new Array(NUM_WORDS)), JSON.stringify(new Array(NUM_WORDS))], function(err, rows, result) {
 						if (err) {
 							return console.error('error running query', err);
 						}
@@ -125,6 +127,10 @@ var generatePuzzleChallenge = function(query, username, opponent, reply, cb) {
 			query("SELECT *, EXTRACT(EPOCH FROM opponent_time) AS time FROM challenges WHERE username = $1 AND opponent = $2", [opponent, username], function(err, rows, result) {
 				if (err) {
 					return console.error('error running query', err);
+				}
+
+				if (!rows[0]) {
+					return console.error('puzzle does not exist');
 				}
 
 				if (!rows[0].time) {
@@ -142,9 +148,7 @@ var generatePuzzleChallenge = function(query, username, opponent, reply, cb) {
 				} else if (rows[0] && rows[0].username) {
 					// On-going puzzle
 					var time_left = current_time - rows[0].time;
-					console.log("current time = " + current_time);
-					console.log("start time = " + rows[0].time);
-					console.log("time left = " + time_left);
+
 					if (time_left > 60) {
 						// Time limit exceeded
 						time_left = 0;
@@ -153,7 +157,8 @@ var generatePuzzleChallenge = function(query, username, opponent, reply, cb) {
 					}
 					var puzzle = {
 						puzzle: JSON.parse(rows[0].puzzle),
-						time_left: time_left
+						time_left: time_left,
+						sol: rows[0].opponent_sol
 					}
 					cb("old", puzzle);
 				} else {
@@ -181,22 +186,6 @@ var countScore = function(grid, words, solution) {
 	return ret;
 }
 
-var insertUserScore = function(query, username, opponent, score) {
-	query("UPDATE challenges SET first_score = $1 WHERE username = $2 and opponent = $3", [score, username, opponent], function(err, rows, result) {
-		if (err) {
-			return console.error('error while updating user score');
-		}
-	});
-}
-
-var insertOpponentScore = function(query, username, opponent, score) {
-	query("UPDATE challenges SET second_score = $1 WHERE username = $2 and opponent = $3", [score, username, opponent], function(err, rows, result) {
-		if (err) {
-			return console.error('error while updating opponent score');
-		}
-	});
-}
-
 var updateResult = function(query, username, opponent, first_score, second_score) {
 	query("SELECT * FROM results WHERE username = $1", [username], function(err, rows, results) {
 		if (err) {
@@ -207,9 +196,13 @@ var updateResult = function(query, username, opponent, first_score, second_score
 			for (var i = 4; i > 0; i--)
 				recent[i] = recent[i - 1];
 
+			var verdict = 2;
+			if (first_score > second_score) verdict = 0;
+			else if (first_score < second_score) verdict = 1;
+
 			recent[0] = {
 				opponent: opponent,
-				verdict: (first_score == second_score) ? 2 : (first_score > second_score) ? 0 : 1 // win: 0, lose: 1, draw: 2
+				verdict: verdict // win: 0, lose: 1, draw: 2
 			}
 
 			query("UPDATE results SET recent = $1 WHERE username = $2", [JSON.stringify(recent), username], function(err, rows, results) {
@@ -234,6 +227,64 @@ var updateResult = function(query, username, opponent, first_score, second_score
 	})
 }
 
+var updateScore = function(query, grid, words, solution, username, opponent, reply, cb) {
+	var check = function() {
+		var x = solution.init_x, y = solution.init_y, dir = solution.dir, i = solution.word_id;
+		var cur = 0, len = words[i].length;
+		while (true) {
+			if (x < 0 || x >= N || y < 0 || y >= N || cur >= len || grid[x][y] !== words[i][cur]) break;
+			x += dx[dir];
+			y += dy[dir];
+			cur++;
+		}
+		if (cur >= len) return true;
+		return false;
+	}
+	if (!reply) {
+		query("SELECT * FROM challenges WHERE username = $1 and opponent = $2", [username, opponent], function(err, rows, result) {
+			if (err) {
+				return console.error('error while updating user score');
+			}
+			if (!rows[0]) {
+				return console.log('error puzzle not found');
+			}
+			var sol = JSON.parse(rows[0].user_sol), score = rows[0].user_score || 0;
+			if (sol[solution.word_id]) return false;
+			if (check()) {
+				sol[solution.word_id] = solution;
+				score++;
+				query("UPDATE challenges SET (user_sol, user_score) = ($1, $2) WHERE username = $3 and opponent = $4", [JSON.stringify(sol), score, username, opponent], function(err, rows, result) {
+					if (err) {
+						return console.error('error while updating user score');
+					}
+				});
+				cb(true);
+			} else cb(false);
+		});
+	} else {
+		query("SELECT * FROM challenges WHERE username = $1 and opponent = $2", [opponent, username], function(err, rows, result) {
+			if (err) {
+				return console.error('error while updating opponent score');
+			}
+			if (!rows[0]) {
+				return console.log('error puzzle not found');
+			}
+			var sol = JSON.parse(rows[0].opponent_sol), score = rows[0].opponent_score || 0;
+			if (sol[solution.word_id]) return false;
+			if (check()) {
+				sol[solution.word_id] = solution;
+				score++;
+				query("UPDATE challenges SET (opponent_sol, opponent_score) = ($1, $2) WHERE username = $3 and opponent = $4", [JSON.stringify(sol), score, opponent, username], function(err, rows, result) {
+					if (err) {
+						return console.error('error while updating opponent score');
+					}
+				});
+				cb(true);
+			} else cb(false);
+		});
+	}
+}
+
 var submitSolution = function(query, username, opponent, solution, time_left, reply, cb) {
 	query("SELECT EXTRACT(EPOCH FROM NOW()) AS time", function(err, rows, result) {
 		var current_timestamp = rows[0].time;
@@ -249,17 +300,15 @@ var submitSolution = function(query, username, opponent, solution, time_left, re
 
 				var puzzle_data = JSON.parse(rows[0].puzzle);
 				var grid = puzzle_data.grid, words = puzzle_data.words;
-				var last_timestamp = rows[0].time, time_diff = current_timestamp - last_timestamp + time_left / 100. - 60;
+				var last_timestamp = rows[0].time, time_diff = current_timestamp - last_timestamp - 60;
 
-				console.log(current_timestamp, last_timestamp);
-				console.log("solution, time diff = " + time_diff);
-				if (time_diff <= 10) {
-					var score = countScore(grid, words, solution);
-					cb("Your score: " + score + ".");
-					insertUserScore(query, username, opponent, score);
+				if (time_diff <= 0) {
+					updateScore(query, grid, words, solution, username, opponent, reply, function(data) {
+						if (data) cb("ok");
+						else cb("no");
+					});
 				} else {
-					cb("Timing doesn't match. Match forfeited.\nYour score: 0.");
-					insertUserScore(query, username, opponent, 0);
+					cb("late");
 				}
 			});
 		} else {
@@ -273,46 +322,121 @@ var submitSolution = function(query, username, opponent, solution, time_left, re
 
 				var puzzle_data = JSON.parse(rows[0].puzzle);
 				var grid = puzzle_data.grid, words = puzzle_data.words;
-				var last_timestamp = rows[0].time, time_diff = current_timestamp - last_timestamp + time_left / 100. - 60;
+				var last_timestamp = rows[0].time, time_diff = current_timestamp - last_timestamp  - 60;
 
 				var other_score = rows[0].first_score, score = 0;
 				var str = "";
 
-				if (time_diff <= 10) {
-					score = countScore(grid, words, solution);
-					insertOpponentScore(query, username, opponent, score);
+				if (time_diff <= 0) {
+					updateScore(query, grid, words, solution, username, opponent, reply, function(data) {
+						if (data) cb("ok");
+						else cb("no");
+					});
 				} else {
-					str = "Timing doesn't match. Match forfeited.\n";
-					insertOpponentScore(query, username, opponent, 0);
+					cb("late");
 				}
-				str += "Your score: " + score + ". Friend's score: " + other_score + ". Result: ";
-				var verdict;
-				if (score > other_score) {
-					str += "You win.";
-					verdict = 0;
-				} else if (score < other_score) {
-					str += "You lose.";
-					verdict = 1;
-				} else {
-					str += "Draw.";
-					verdict = 2;
+			});
+		}
+	});
+}
+
+var finalize = function(query, username, opponent, reply, cb) {
+	query("SELECT EXTRACT(EPOCH FROM NOW()) AS time", function(err, rows, result) {
+		var current_timestamp = rows[0].time;
+	
+		if (!reply) {
+			query("SELECT *, EXTRACT(EPOCH FROM user_time) AS user_time, EXTRACT(EPOCH FROM opponent_time) AS opponent_time FROM challenges WHERE username = $1 AND opponent = $2",
+				[username, opponent],
+				function(err, rows, results) {
+
+				if (err) {
+					return console.error('error running query', err);
+				}
+				if (!rows[0] || !rows[0].puzzle) {
+					return console.error('error puzzle not found');
 				}
 
-				updateResult(query, username, opponent, score, other_score);
-				updateResult(query, opponent, username, other_score, score);
-				query("DELETE FROM challenges WHERE username = $1 AND opponent = $2", [opponent, username], function(err, rows, results) {
-					if (err) {
-						return console.error('error running query', err);
+				if (!rows[0].user_time || !rows[0].opponent_time) {
+					cb("Your score: " + rows[0].user_score, -1);
+					return;
+				}
+
+				var user_diff = current_timestamp - rows[0].user_time - 60;
+				var opponent_diff = current_timestamp - rows[0].opponent_time - 60;
+
+				if (user_diff > 0 && opponent_diff > 0) {
+					var str = "Your score: " + rows[0].user_score + ". Friend's score: " + rows[0].opponent_score + ". Result: ", verdict;
+
+					if (rows[0].user_score > rows[0].opponent_score) {
+						str += "You win.";
+						verdict = 0;
+					} else if (rows[0].user_score < rows[0].opponent_score) {
+						str += "You lose.";
+						verdict = 1;
+					} else {
+						str += "Draw.";
+						verdict = 2;
 					}
-				});
-				cb(str, verdict);
+
+					updateResult(query, username, opponent, rows[0].user_score, rows[0].opponent_score);
+					updateResult(query, opponent, username, rows[0].opponent_score, rows[0].user_score);
+					cb(str, verdict);
+				} else {
+					cb("", -1);
+				}
+			});
+		} else {
+			query("SELECT *, EXTRACT(EPOCH FROM user_time) AS user_time, EXTRACT(EPOCH FROM opponent_time) AS opponent_time FROM challenges WHERE username = $1 AND opponent = $2",
+				[opponent, username],
+				function(err, rows, results) {
+
+				if (err) {
+					return console.error('error running query', err);
+				}
+				if (!rows[0] || !rows[0].puzzle) {
+					return console.error('error puzzle not found');
+				}
+
+				if (!rows[0].user_time || !rows[0].opponent_time) {
+					cb("Your score: " + rows[0].opponent_score, -1);
+					return;
+				}
+
+				var user_diff = current_timestamp - rows[0].user_time - 60;
+				var opponent_diff = current_timestamp - rows[0].opponent_time - 60;
+
+				if (user_diff > 0 && opponent_diff > 0) {
+					var str = "Your score: " + rows[0].opponent_score + ". Friend's score: " + rows[0].user_score + ". Result: ", verdict;
+
+					if (rows[0].opponent_score > rows[0].user_score) {
+						str += "You win.";
+						verdict = 0;
+					} else if (rows[0].opponent_score < rows[0].user_score) {
+						str += "You lose.";
+						verdict = 1;
+					} else {
+						str += "Draw.";
+						verdict = 2;
+					}
+
+					updateResult(query, username, opponent, rows[0].opponent_score, rows[0].user_score);
+					updateResult(query, opponent, username, rows[0].user_score, rows[0].opponent_score);
+					query("DELETE FROM challenges WHERE username = $1 AND opponent = $2", [opponent, username], function(err, rows, results) {
+						if (err) {
+							return console.error('error running query', err);
+						}
+					});
+					cb(str, verdict);
+				} else {
+					cb("", -1);
+				}
 			});
 		}
 	});
 }
 
 var searchChallenges = function(query, username, cb) {
-	query("SELECT * FROM challenges WHERE opponent = $1 and second_score IS NULL", [username], function(err, rows, results) {
+	query("SELECT * FROM challenges WHERE opponent = $1 and opponent_time IS NULL", [username], function(err, rows, results) {
 		if (err) {
 			return console.error('error running query', err);
 		}
@@ -323,7 +447,7 @@ var searchChallenges = function(query, username, cb) {
 					challenges_list.push(rows[i].username);
 				}
 		}
-		query("SELECT * FROM challenges WHERE username = $1 AND second_score IS NULL", [username], function(err, rows, results) {
+		query("SELECT * FROM challenges WHERE username = $1 AND opponent_time IS NULL", [username], function(err, rows, results) {
 			if (rows && rows.length) {
 				for (var i = 0; i < rows.length; i++)
 					if (rows[i] && rows[i].puzzle) {
@@ -340,7 +464,7 @@ var searchResults = function(query, username, cb) {
 		if (err) {
 			return console.error('error running query', err);
 		}
-		console.log(rows);
+
 		if (!rows[0] || !rows[0].username) {
 			var recent = new Array(5);
 			query("INSERT INTO results (username, recent) VALUES ($1, $2)", [username, JSON.stringify(recent)], function(err, rows, result) {
@@ -359,6 +483,7 @@ module.exports = {
 	generatePuzzle: generatePuzzle,
 	generatePuzzleChallenge: generatePuzzleChallenge,
 	submitSolution: submitSolution,
+	finalize: finalize,
 	searchChallenges: searchChallenges,
 	searchResults: searchResults
 }

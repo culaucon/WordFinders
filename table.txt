@@ -1,4 +1,6 @@
-create table challenges(match_id serial primary key, username varchar(40) not null, opponent varchar(40) not null, first_score integer, second_score integer, user_time timestamp with time zone, opponent_time timestamp with time zone, puzzle text not null);
+create table challenges(match_id serial primary key, username varchar(40) not null, opponent varchar(40) not null, user_score integer, user_sol text, opponent_score integer, opponent_sol text, user_time timestamp with time zone, opponent_time timestamp with time zone, puzzle text not null);
+
+
 grant select, insert, update, delete on table challenges to cp3101b;
 grant usage, select on sequence challenges_match_id_seq to cp3101b;
 

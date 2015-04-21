@@ -19,6 +19,7 @@ var wordDisplay, string;
 var username;
 var counter, timeLeft;
 var opponent, reply;
+var toDetachListener;
 
 function storeOpponent(opp) {
 	opponent = opp;
@@ -192,27 +193,51 @@ function detachListeners() {
 	wordDisplay.hide();
 }
 
-function sendSolutionToServer() {
-	detachListeners();
+function doneWithPuzzle() {
+	if (!mouseUp) {
+		toDetachListener = true;
+	} else {
+		detachListeners();
+	}
 	if (!username || !opponent) {
 		alert("Congratulations, you have found all the words!");
 		return;
 	} else {
 		$.ajax({
 			type: "POST",
-			url: "/submit-solution",
+			url: "/finalize",
 			data: {
 				username: username,
 				opponent: opponent,
-				solution: JSON.stringify(solution),
-				time_left: timeLeft,
 				reply: reply
 			},
-			success: function (data) {
+			success: function(data) {
 				alert(data);
 			}
 		});
 	}
+}
+
+function checkWithServer(word_id, cb) {
+	$.ajax({
+		type: "POST",
+		url: "/submit-solution",
+		data: {
+			username: username,
+			opponent: opponent,
+			solution: JSON.stringify({
+				init_x: initX,
+				init_y: initY,
+				dir: dir,
+				word_id: word_id
+			}),
+			time_left: timeLeft,
+			reply: reply
+		},
+		success: function(data) {
+			cb(data);
+		}
+	});
 }
 
 function initializePuzzle() {
@@ -234,13 +259,29 @@ function initializePuzzle() {
 				}
 				puzzle = data.puzzle.grid;
 				words = data.puzzle.words;
+				solution = new Array(words.length);
+				solutionParams = new Array(words.length);
+
+
+				if (data.sol) {
+					console.log(data.sol);
+					solution = JSON.parse(data.sol);
+					for (var i = 0; i < solution.length; i++)
+						if (solution[i]) {
+							solutionParams[i] = {
+								centerX: (solution[i].init_y + 0.5) * SIZE / N,
+								centerY: (solution[i].init_x + 0.5) * SIZE / N,
+								angle: ((solution[i].dir === 7) ? 4 : (solution[i].dir - 3)) * Math.PI / 4,
+								length: words[i].length - 1,
+								unit: SIZE / N * ((solution[i].dir % 2 === 0) ? Math.sqrt(2) : 1)
+							}
+						}
+				}
 
 				initializeDocument();
 				initializeCanvas();
 				initializeTimer(data.time_left);
 
-				solution = new Array(words.length);
-				solutionParams = new Array(words.length);
 				stringToID = {};
 				for (var i = 0; i < words.length; i++) stringToID[words[i]] = i + 1;
 				numFound = 0;
@@ -275,27 +316,38 @@ function initializePuzzle() {
 	}
 }
 
+function addToSolution(id) {
+	numFound++;
+	solution[id] = {
+		initX: initX,
+		initY: initY,
+		dir: dir
+	}
+	solutionParams[id] = {
+		centerX: centerX,
+		centerY: centerY,
+		angle: angle,
+		length: len,
+		unit: unit
+	}
+	updateLists();
+}
+
 function initializeDocument() {
+	toDetachListener = false;
 	wordDisplay = $("#word-display");
 	username = getCookie("username");
 	$(document).on("mouseup", function(e) {
+		if (toDetachListener) detachListeners();
 		if (stringToID[string]) {
 			var i = stringToID[string] - 1;
 			if (!solutionParams[i]) {
-				numFound++;
-				solution[i] = {
-					initX: initX,
-					initY: initY,
-					dir: dir
+				addToSolution(i);
+				if (!username || !opponent) {
+				} else {
+					checkWithServer(i, function(data) {
+					});
 				}
-				solutionParams[i] = {
-					centerX: centerX,
-					centerY: centerY,
-					angle: angle,
-					length: len,
-					unit: unit
-				}
-				updateLists();
 			}
 			wordDisplay.html(string);
 			wordDisplay.stop(true, true);
@@ -308,7 +360,7 @@ function initializeDocument() {
 
 			if (numFound === words.length) {
 				clearInterval(counter);
-				sendSolutionToServer();
+				doneWithPuzzle();
 			}
 		} else {
 			wordDisplay.stop(true, true);
@@ -344,7 +396,7 @@ function initializeTimer(time_left) {
 			if (timeLeft <= 0) {
 				timer.css("visiblility", "hidden");
 				clearInterval(counter);
-				sendSolutionToServer();
+				doneWithPuzzle();
 			} else {
 				timeLeft--;
 				var sec = parseInt(timeLeft * INTERVAL / 1000);
