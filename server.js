@@ -95,7 +95,9 @@ app.get("/logout", function(req, res) {
 })
 
 app.get("/practice", function(req, res) {
-	res.render("practice.ejs", {page: "practice"});
+	var mode = req.param("mode");
+	if (!mode) mode = 0;
+	res.render("practice.ejs", {page: "practice", mode: mode});
 });
 
 app.get("/challenge", function(req, res) {
@@ -107,16 +109,21 @@ app.get("/challenge", function(req, res) {
 				res.render("challenge.ejs", {page: "challenge", challenges_list: challenges_list, unanswered_list: unanswered_list});
 			});
 		} else {
-			res.render("challenge_puzzle.ejs", {page: "challenge", opponent: req.param("opponent"), reply: req.param("reply")});
+			var mode = req.param("mode");
+			if (!mode) mode = 0;
+			res.render("challenge_puzzle.ejs", {page: "challenge", opponent: req.param("opponent"), reply: req.param("reply"), mode: mode});
 		}
 	}
 });
 
 app.post("/gen-puzzle-practice", function(req, res) {
-	res.send(puzzle.generatePuzzle());
+	if (!req.body.mode) req.body.mode = 0;
+	res.send(puzzle.generatePuzzle(req.body.mode));
 });
 
 app.post("/gen-puzzle-challenge", function(req, res) {
+	var mode = req.body.mode;
+	if (!mode) mode = 0;
 	var opponent = req.body.opponent;
 	userSearch.search(opponent, query, function(username) {
 		if (username === "") {
@@ -127,7 +134,7 @@ app.post("/gen-puzzle-challenge", function(req, res) {
 				redirect: "/challenge"
 			});
 		} else {
-			puzzle.generatePuzzleChallenge(query, req.user.username, username, req.body.reply, function(status, puzzle) {
+			puzzle.generatePuzzleChallenge(query, req.user.username, username, req.body.reply, mode, function(status, puzzle) {
 				var data = {
 					opponent: opponent,
 					page: "challenge"
@@ -146,7 +153,7 @@ app.post("/gen-puzzle-challenge", function(req, res) {
 });
 
 app.post("/finalize", function(req, res) {
-	puzzle.finalize(query, req.body.username, req.body.opponent, req.body.reply, function(data, verdict) {
+	puzzle.finalize(query, req.body.username, req.body.opponent, req.body.reply, req.body.mode, function(data, verdict) {
 		if (verdict != -1) rating.updateRatings(query, elo, req.body.username, req.body.opponent, req.body.reply, verdict);
 		res.send(data);
 	});

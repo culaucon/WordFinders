@@ -48,9 +48,20 @@
 			</ul>
 			<% } %>
 		</div>
-		<div class="col-md-6" align="center">
-			<input type="text" id="user_search" placeholder="Search for user">
-			<button id="search" class="btn">Search</button>
+		<div class="col-md-6" align="left">
+			<div style="float:left">
+				<input class="form-control" type="text" id="user_search" placeholder="Search for user">
+			</div>
+			<div style="float:left">
+				<button id="search" class="btn">Search</button>
+			</div>
+			<div style="float:left; margin-left:20px">
+				<select class="form-control" style="width:100px; margin-left:20px;">
+					<option id="diff-easy" value="easy">Easy</option>
+					<option id="diff-medium" value="medium">Medium</option>
+					<option id="diff-hard" value="hard">Hard</option>
+				</select>
+			</div>
 			<br/><br/>
 			<ul class="list-group" id="user_list"></ul>
 		</div>

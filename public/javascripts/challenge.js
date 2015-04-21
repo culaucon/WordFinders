@@ -4,7 +4,25 @@ function getCookie(name) {
 	if (parts.length == 2) return parts.pop().split(";").shift();
 }
 
+var mode;
+
+function redirectChallenge(opponent) {
+	var url = "/challenge?opponent=" + opponent + "&mode=" + mode;
+	window.location.replace(url);
+}
+
 $(function() {
+	mode = 0;
+	$("#diff-easy").click(function(e) {
+		mode = 0;
+	});
+	$("#diff-medium").click(function(e) {
+		mode = 1;
+	});
+	$("#diff-hard").click(function(e) {
+		mode = 2;
+	});
+
 	var username = getCookie("username");
 	$("#user_search").keyup(function(event) {
 		if (event.keyCode === 13) {
@@ -28,7 +46,7 @@ $(function() {
 					} else {
 						for (var i = 0; i < data.length; i++)
 							if (data[i] != username) {
-								$("#user_list").append("<a class='list-group-item' href='/challenge?opponent=" + data[i] + "'>" + data[i] + "</a>");
+								$("#user_list").append("<a class='list-group-item' onclick='redirectChallenge(\"" + data[i] + "\")' href='#'>" + data[i] + "</a>");
 							}
 					}
 				}

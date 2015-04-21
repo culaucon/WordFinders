@@ -1,21 +1,20 @@
 var fs = require("fs");
 
-const NUM_WORDS = 15;
-const N = 12;
-const SIZE = 480;
+const NUM_WORDS = [10, 12, 15];
+const N = [8, 10, 12];
 const FILE_PATH = "./words.txt";
 const dx = [-1, -1, -1, 0, 1, 1, 1, 0];
 const dy = [-1, 0, 1, 1, 1, 0, -1, -1];
 
-var generatePuzzle = function() {
+var generatePuzzle = function(mode) {
 	var puzzle;
 	var list;
 	
 	function generate(words) {
-		puzzle = new Array(N);
-		for (var i = 0; i < N; i++) {
-			puzzle[i] = new Array(N);
-			for (var j = 0; j < N; j++) {
+		puzzle = new Array(N[mode]);
+		for (var i = 0; i < N[mode]; i++) {
+			puzzle[i] = new Array(N[mode]);
+			for (var j = 0; j < N[mode]; j++) {
 				puzzle[i][j] = ' ';
 			}
 		}
@@ -25,10 +24,10 @@ var generatePuzzle = function() {
 		list = new Array();
 		var total_length = 0;
 	
-		for (var cnt = 0; cnt < NUM_WORDS; cnt++) {
+		for (var cnt = 0; cnt < NUM_WORDS[mode]; cnt++) {
 			while (true) {
 				var k = parseInt(Math.random() * n);
-				if (words[k].length < 3 || words[k].length > N || chosen[k] || total_length + words[k].length > 6 * (cnt + 1)) continue;
+				if (words[k].length < 3 || words[k].length > N[mode] || chosen[k] || total_length + words[k].length > 6 * (cnt + 1)) continue;
 				var ok = true;
 				for (var i = 0; i < cnt; i++) {
 					if (list[i].indexOf(words[k]) != -1 || words[k].indexOf(list[i]) != -1) ok = false;
@@ -36,18 +35,18 @@ var generatePuzzle = function() {
 				if (!ok) continue;
 				
 				var pos = [];
-				for (var i = 0; i < N; i++)
-					for (var j = 0 ; j < N; j++)
+				for (var i = 0; i < N[mode]; i++)
+					for (var j = 0 ; j < N[mode]; j++)
 						for (var dir = 0; dir < 8; dir++) {
 							var x = i, y = j, cur = 0;
 							while (cur < words[k].length) {
-								if (x < 0 || x >= N || y < 0 || y >= N || (puzzle[x][y] != ' ' && puzzle[x][y] != words[k][cur])) break;
+								if (x < 0 || x >= N[mode] || y < 0 || y >= N[mode]|| (puzzle[x][y] != ' ' && puzzle[x][y] != words[k][cur])) break;
 								x += dx[dir];
 								y += dy[dir];
 								cur++;
 							}
 							if (cur == words[k].length) {
-								pos.push((i * N + j) * 8 + dir);
+								pos.push((i * N[mode] + j) * 8 + dir);
 							}
 						}
 				if (pos.length == 0) continue;
@@ -55,7 +54,7 @@ var generatePuzzle = function() {
 				total_length += words[k].length;
 				list.push(words[k].toUpperCase());
 				var id = parseInt(Math.random() * pos.length);
-				var x = parseInt(pos[id] / 8 / N), y = parseInt((pos[id] / 8)) % N, dir = pos[id] % 8;
+				var x = parseInt(pos[id] / 8 / N[mode]), y = parseInt((pos[id] / 8)) % N[mode], dir = pos[id] % 8;
 				for (var cur = 0; cur < words[k].length; cur++, x += dx[dir], y += dy[dir]) {
 					puzzle[x][y] = words[k][cur];
 				}
@@ -63,8 +62,8 @@ var generatePuzzle = function() {
 			}
 		}
 console.log(puzzle);
-		for (var i = 0; i < 12; i++)
-			for (var j = 0; j < 12; j++)
+		for (var i = 0; i < N[mode]; i++)
+			for (var j = 0; j < N[mode]; j++)
 				if (puzzle[i][j] === ' ') {
 					var t = parseInt(Math.random() * 26);
 					puzzle[i][j] = String.fromCharCode(65 + t);
@@ -83,7 +82,7 @@ console.log(puzzle);
 	return data;
 }
 
-var generatePuzzleChallenge = function(query, username, opponent, reply, cb) {
+var generatePuzzleChallenge = function(query, username, opponent, reply, mode, cb) {
 	query("SELECT EXTRACT(EPOCH FROM NOW()) AS current_time", function(err, rows, result) {
 		if (err) {
 			return console.error('error running query', err);
@@ -113,9 +112,9 @@ var generatePuzzleChallenge = function(query, username, opponent, reply, cb) {
 					}
 					cb("old", puzzle);
 				} else {
-					var data = generatePuzzle();
+					var data = generatePuzzle(mode);
 					query("INSERT INTO challenges (username, opponent, user_time, puzzle, user_sol, opponent_sol, user_score, opponent_score) VALUES ($1, $2, NOW(), $3, $4, $5, 0, 0)",
-						[username, opponent, JSON.stringify(data), JSON.stringify(new Array(NUM_WORDS)), JSON.stringify(new Array(NUM_WORDS))], function(err, rows, result) {
+						[username, opponent, JSON.stringify(data), JSON.stringify(new Array(NUM_WORDS[mode])), JSON.stringify(new Array(NUM_WORDS[mode]))], function(err, rows, result) {
 						if (err) {
 							return console.error('error running query', err);
 						}
@@ -257,8 +256,8 @@ var updateScore = function(query, grid, words, solution, username, opponent, rep
 					if (err) {
 						return console.error('error while updating user score');
 					}
+					cb(true);
 				});
-				cb(true);
 			} else cb(false);
 		});
 	} else {
@@ -278,8 +277,8 @@ var updateScore = function(query, grid, words, solution, username, opponent, rep
 					if (err) {
 						return console.error('error while updating opponent score');
 					}
+					cb(true);
 				});
-				cb(true);
 			} else cb(false);
 		});
 	}
@@ -340,7 +339,7 @@ var submitSolution = function(query, username, opponent, solution, time_left, re
 	});
 }
 
-var finalize = function(query, username, opponent, reply, cb) {
+var finalize = function(query, username, opponent, reply, mode, cb) {
 	query("SELECT EXTRACT(EPOCH FROM NOW()) AS time", function(err, rows, result) {
 		var current_timestamp = rows[0].time;
 	
@@ -357,6 +356,7 @@ var finalize = function(query, username, opponent, reply, cb) {
 				}
 
 				if (!rows[0].user_time || !rows[0].opponent_time) {
+					if (!rows[0].user_score) rows[0].user_score = 0;
 					cb("Your score: " + rows[0].user_score, -1);
 					return;
 				}
@@ -364,7 +364,7 @@ var finalize = function(query, username, opponent, reply, cb) {
 				var user_diff = current_timestamp - rows[0].user_time - 60;
 				var opponent_diff = current_timestamp - rows[0].opponent_time - 60;
 
-				if (user_diff > 0 && opponent_diff > 0) {
+				if ((user_diff > 0 || rows[0].user_score === NUM_WORDS[mode]) && (opponent_diff > 0 || rows[0].opponent_score === NUM_WORDS[mode])) {
 					var str = "Your score: " + rows[0].user_score + ". Friend's score: " + rows[0].opponent_score + ". Result: ", verdict;
 
 					if (rows[0].user_score > rows[0].opponent_score) {
@@ -398,6 +398,7 @@ var finalize = function(query, username, opponent, reply, cb) {
 				}
 
 				if (!rows[0].user_time || !rows[0].opponent_time) {
+					if (!rows[0].opponent_score) rows[0].opponent_score = 0;
 					cb("Your score: " + rows[0].opponent_score, -1);
 					return;
 				}
@@ -405,7 +406,8 @@ var finalize = function(query, username, opponent, reply, cb) {
 				var user_diff = current_timestamp - rows[0].user_time - 60;
 				var opponent_diff = current_timestamp - rows[0].opponent_time - 60;
 
-				if (user_diff > 0 && opponent_diff > 0) {
+				if ((user_diff > 0 || rows[0].user_score === NUM_WORDS[mode]) && (opponent_diff > 0 || rows[0].opponent_score === NUM_WORDS[mode])) {
+
 					var str = "Your score: " + rows[0].opponent_score + ". Friend's score: " + rows[0].user_score + ". Result: ", verdict;
 
 					if (rows[0].opponent_score > rows[0].user_score) {

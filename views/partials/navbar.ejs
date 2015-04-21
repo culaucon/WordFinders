@@ -15,18 +15,26 @@
 				<a href="/">Home</a></li>
 
 			<% if (locals.page === "practice") { %>
-				<li class="active">
+				<li class="dropdown active">
 			<% } else { %>
-				<li>
+				<li class="dropdown">
 			<% } %>
-				<a href="/practice">Practice Mode</a></li>
+					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Practice Mode <span class="caret"></span></a>
+					<ul class="dropdown-menu" role="menu">
+						<li><a href="/practice?mode=0">Easy</a></li>
+						<li><a href="/practice?mode=1">Medium</a></li>
+						<li><a href="/practice?mode=2">Hard</a></li>
+					</ul>
+				</li>
 			
 			<% if (locals.page === "challenge") { %>
 				<li class="active">
 			<% } else { %>
 				<li>
 			<% } %>
-				<a href="/challenge">Challenge Mode</a></li>
+					<a href="/challenge">Challenge Mode</a>
+				</li>
+
 
 		<% } %>
 		</ul>

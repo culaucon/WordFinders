@@ -1,5 +1,5 @@
-const N = 12;
-const SIZE = 480;
+const N_ARR = [8, 10, 12];
+const SIZE_ARR = [320, 400, 480];
 const FILE_PATH = "words.txt";
 const dx = [-1, -1, -1, 0, 1, 1, 1, 0];
 const dy = [-1, 0, 1, 1, 1, 0, -1, -1];
@@ -10,6 +10,7 @@ const DANGER_TIME = 1000 * 10; // 10 seconds
 const SHOW_CYCLE = 90;
 const HIDE_CYCLE = 10;
 
+var N, SIZE;
 var canvas, context;
 var puzzle, words, solution;
 var solutionParams, numFound, stringToID;
@@ -20,6 +21,7 @@ var username;
 var counter, timeLeft;
 var opponent, reply;
 var toDetachListener;
+var mode;
 
 function storeOpponent(opp) {
 	opponent = opp;
@@ -27,6 +29,10 @@ function storeOpponent(opp) {
 
 function storeReply(rep) {
 	reply = rep;
+}
+
+function storeMode(m) {
+	mode = parseInt(m);
 }
 
 function getCoordinates(event) {
@@ -38,6 +44,8 @@ function getCoordinates(event) {
 function initializeCanvas() {
 	canvas = document.getElementById("puzzle");
 	context = canvas.getContext("2d");
+	canvas.style.left = (480 - SIZE) / 2 + "px";
+	document.getElementById("word-display").style.top = - 480 + SIZE + "px";
 	
 	$("#puzzle").on("mousedown", function(event) {
 		var coordinates = getCoordinates(event);
@@ -104,7 +112,7 @@ function initializeCanvas() {
 
 	$("#puzzle").on("mouseup", function(event) {
 		if (initX === -1 || initY === -1) return;
-		context.clearRect(0, 0, SIZE, SIZE);
+		context.clearRect(0, 0, 480, 480);
 		drawSolution();
 		drawBoard();
 	});
@@ -112,6 +120,7 @@ function initializeCanvas() {
 }
 
 function drawRect(centerX, centerY, angle, len, unit, isSolution) {
+	if (centerX >= SIZE || centerY >= SIZE) return;
 	context.translate(centerX, centerY);
 	context.rotate(angle);
 	context.beginPath();
@@ -128,7 +137,7 @@ function drawRect(centerX, centerY, angle, len, unit, isSolution) {
 }
 
 function drawSolution() {
-	context.clearRect(0, 0, SIZE, SIZE);
+	context.clearRect(0, 0, 480, 480);
 	for (var i = 0; i < solutionParams.length; i++)
 		if (solutionParams[i]) {
 			drawRect(
@@ -209,7 +218,8 @@ function doneWithPuzzle() {
 			data: {
 				username: username,
 				opponent: opponent,
-				reply: reply
+				reply: reply,
+				mode: mode
 			},
 			success: function(data) {
 				alert(data);
@@ -241,6 +251,12 @@ function checkWithServer(word_id, cb) {
 }
 
 function initializePuzzle() {
+	if (!mode) {
+		mode = 0;
+	}
+	N = N_ARR[mode];
+	SIZE = SIZE_ARR[mode];
+
 	if (opponent) {
 		// Challenge mode
 		$.ajax({
@@ -248,7 +264,8 @@ function initializePuzzle() {
 			url: "/gen-puzzle-challenge",
 			data: {
 				opponent: opponent,
-				reply: reply
+				reply: reply,
+				mode: mode
 			},
 			success: function(data) {
 				if (data.message && data.redirect) {
@@ -262,9 +279,16 @@ function initializePuzzle() {
 				solution = new Array(words.length);
 				solutionParams = new Array(words.length);
 
+				if (puzzle.length === 12) {
+					mode = 2;
+				} else if (puzzle.length === 10) {
+					mode = 1;
+				} else {
+					mode = 0;
+				}
+
 
 				if (data.sol) {
-					console.log(data.sol);
 					solution = JSON.parse(data.sol);
 					for (var i = 0; i < solution.length; i++)
 						if (solution[i]) {
@@ -295,6 +319,9 @@ function initializePuzzle() {
 		$.ajax({
 			type: "POST",
 			url: "/gen-puzzle-practice",
+			data: {
+				mode: mode
+			},
 			success: function(data) {
 				puzzle = data.grid;
 				words = data.words;
@@ -346,6 +373,10 @@ function initializeDocument() {
 				if (!username || !opponent) {
 				} else {
 					checkWithServer(i, function(data) {
+						if (numFound === words.length) {
+							clearInterval(counter);
+							doneWithPuzzle();
+						}
 					});
 				}
 			}
@@ -358,10 +389,6 @@ function initializeDocument() {
 				wordDisplay.show();
 			});
 
-			if (numFound === words.length) {
-				clearInterval(counter);
-				doneWithPuzzle();
-			}
 		} else {
 			wordDisplay.stop(true, true);
 			wordDisplay.show();
@@ -372,7 +399,7 @@ function initializeDocument() {
 			});
 		}
 		mouseUp = true;
-		context.clearRect(0, 0, SIZE, SIZE);
+		context.clearRect(0, 0, 480, 480);
 		drawSolution();
 		drawBoard();
 		initX = -1;
