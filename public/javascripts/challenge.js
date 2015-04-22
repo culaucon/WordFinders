@@ -31,7 +31,6 @@ $(function() {
 	});
 	$("#search").click(function() {
 		var user_search = $("#user_search").val();
-		$("#user_list").empty();
 		if (user_search) {
 			$.ajax({
 				type: "POST",
@@ -41,6 +40,7 @@ $(function() {
 					like: true
 				},
 				success: function(data) {
+					$("#user_list").empty();
 					if (!data || data.length === 0) {
 						$("#user_list").append("<span>No users found.</span>");
 					} else {

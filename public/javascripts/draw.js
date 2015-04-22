@@ -209,7 +209,7 @@ function doneWithPuzzle() {
 		detachListeners();
 	}
 	if (!username || !opponent) {
-		alert("Congratulations, you have found all the words!");
+		alert("Congratulations, you have found all the words! Please refresh for another puzzle.");
 		return;
 	} else {
 		$.ajax({
@@ -370,8 +370,7 @@ function initializeDocument() {
 			var i = stringToID[string] - 1;
 			if (!solutionParams[i]) {
 				addToSolution(i);
-				if (!username || !opponent) {
-				} else {
+				if (username && opponent) {
 					checkWithServer(i, function(data) {
 						if (numFound === words.length) {
 							clearInterval(counter);
@@ -388,6 +387,11 @@ function initializeDocument() {
 				wordDisplay.html("");
 				wordDisplay.show();
 			});
+			if (!username || !opponent) {
+				if (numFound === words.length) {
+					doneWithPuzzle();
+				}
+			}
 
 		} else {
 			wordDisplay.stop(true, true);
