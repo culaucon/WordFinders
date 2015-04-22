@@ -9,6 +9,8 @@ body {
 	-moz-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
+	font-family: Varela Round;
+
 }
 
 .found {
@@ -16,21 +18,25 @@ body {
 }
 
 .normal {
+	font-family: Varela Round;
 	font-size: 50px;
 	color: black;
 }
 
 .positive {
+	font-family: Varela Round;
 	font-size: 50px;
 	color: green;
 }
 
 .negative {
+	font-family: Varela Round;
 	font-size: 50px;
 	color: red;
 }
 
 #timer {
+	font-family: Varela Round;
 	font-size: 20px;
 }
 

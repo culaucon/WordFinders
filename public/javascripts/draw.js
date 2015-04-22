@@ -159,7 +159,7 @@ function drawBoard() {
 
 	context.textBaseline = "top";
 	context.textAlign = "center";
-	context.font = "30px Arial";
+	context.font = "30px Varela Round";
 	for (var i = 5; i < SIZE; i += SIZE / N) {
 		for (var j = 20; j < SIZE; j += SIZE / N) {
 			var ch = puzzle[(i - 5) / (SIZE / N)][(j - 20) / (SIZE / N)].toUpperCase();
