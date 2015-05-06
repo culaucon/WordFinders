@@ -56,3 +56,38 @@ span.lose {
 span.draw {
 	color: orange;
 }
+
+.top-table td, th {
+	text-align: center;
+}
+
+.master, .master:hover {
+	color: red;
+	font-weight: bold;
+	text-decoration: none;
+}
+.expert, .expert:hover {
+	color: yellow;
+	font-weight: bold;
+	text-decoration: none;
+}
+.advance, .advance:hover {
+	color: blue;
+	font-weight: bold;
+	text-decoration: none;
+}
+.average, .average:hover {
+	color: green;
+	font-weight: bold;
+	text-decoration: none;
+}
+.novice, .novice:hover {
+	color: gray;
+	font-weight: bold;
+	text-decoration: none;
+}
+.beginner, .beginner:hover {
+	color: white;
+	font-weight: bold;
+	text-decoration: none;
+}

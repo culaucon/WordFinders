@@ -54,7 +54,7 @@
 					</form>
 				<% } %>
 			<% } else { %>
-				<li><p class="navbar-text">Hi <%= user.username %></p></li>
+				<li><p class="navbar-text">Hi <span class="<%= user.title %>"><%= user.username %></span></p></li>
 				<li>
 					<form action="/logout" method="get">
 						<button class="btn btn-default navbar-btn">Log Out</button>

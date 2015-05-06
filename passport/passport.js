@@ -1,7 +1,7 @@
 var LocalStrategy = require("passport-local").Strategy;
 var bcrypt = require("bcrypt-nodejs");
 
-module.exports = function(passport, query) {
+module.exports = function(passport, rating, query) {
 
 	passport.serializeUser(function(user, done) {
 		done(null, user.id);
@@ -12,7 +12,10 @@ module.exports = function(passport, query) {
 			if (err) {
 				return console.error('error running query', err);
 			}
-			done(err, rows[0]);
+			rating.getUserStats(query, rows[0].username, function(data) {
+				rows[0].title = data.title;
+				done(err, rows[0]);
+			});
 		});
 	});
 	

@@ -26,7 +26,7 @@ if (process.env.DATABASE_URL) {
 app.use(expressSession({secret: "secret session"}));
 app.use(passport.initialize());
 app.use(passport.session());
-require("./passport/passport")(passport, query);
+require("./passport/passport")(passport, rating, query);
 
 // Express setup
 app.use(bodyParser.json());
@@ -52,11 +52,31 @@ app.get("/", function(req, res) {
 		res.render("index.ejs", {page: "home"});
 	} else {
 		puzzle.searchResults(query, req.user.username, function(recent) {
-			rating.getStats(query, req.user.username, function(stats) {
-				res.render("index.ejs", {page: "home", recent: recent, stats: stats});
+			rating.getUserStats(query, req.user.username, function(stats) {
+				rating.getTopRatings(query, function(top) {
+					res.render("index.ejs", {page: "home", recent: recent, stats: stats, top: top});
+				})
 			})
 		});
 	}
+});
+
+app.get("/user/:name?", function(req, res) {
+	var name = req.param("name");
+
+	userSearch.search(name, query, function(data) {
+		if (!data) {
+			res.redirect("/");
+		} else {
+			rating.getUserStats(query, name, function(stats) {
+				puzzle.searchResults(query, name, function(recent) {
+					rating.getTopRatings(query, function(top) {
+						res.render("user.ejs", {page: "home", recent: recent, stats: stats, top: top});
+					});
+				});
+			});
+		}
+	});
 });
 
 app.get("/login", function(req, res) {

@@ -67,8 +67,18 @@ var updateRatings = function(query, elo, username, opponent, reply, verdict) {
 	});
 }
 
+var getTitle = function(rating) {
+	var title = "beginner";
+	if (rating >= 2200) title = "master"; 
+	else if (rating >= 1500) title = "expert";
+	else if (rating >= 1200) title = "advance";
+	else if (rating >= 800)  title = "average";
+	else if (rating > 0) title = "novice";
 
-var getStats = function(query, username, cb) {
+	return title;
+}
+
+var getUserStats = function(query, username, cb) {
 	query("SELECT * FROM stats WHERE username = $1", [username], function(err, rows, results) {
 		if (err) {
 			return console.error('error running query', err);
@@ -79,26 +89,43 @@ var getStats = function(query, username, cb) {
 					return console.error('error running query', err);
 				}
 				var data = {
+					username: username,
 					win: 0,
 					lose: 0,
 					draw: 0,
-					rating: 1200
+					rating: 1200,
+					title: "beginner"
 				}
 				cb(data);
 			})
 		} else {
 			var data = {
+				username: username,
 				win: rows[0].win,
 				lose: rows[0].lose,
 				draw: rows[0].draw,
-				rating: rows[0].rating
+				rating: rows[0].rating,
+				title: getTitle(rows[0].rating)
 			}
 			cb(data);
 		}
 	});
 }
 
+var getTopRatings = function(query, cb) {
+	query("SELECT username, rating FROM stats ORDER BY rating DESC LIMIT 10", function(err, rows, results) {
+		if (err) {
+			return console.error('error running query', err);
+		}
+		for (var i = 0; i < rows.length; i++) {
+			rows[i].title = getTitle(rows[i].rating);
+		}
+		cb(rows);
+	});
+}
+
 module.exports = {
 	updateRatings: updateRatings,
-	getStats: getStats
+	getUserStats: getUserStats,
+	getTopRatings: getTopRatings
 }
